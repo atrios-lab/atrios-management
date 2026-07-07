@@ -3,12 +3,18 @@ import { PRODUCTS } from "@/lib/mock-data";
 
 // ponytail: dev-only index of screens; delete when real auth/routing lands.
 const PAGES = [
-  { href: "/login", label: "01 · Login" },
-  { href: "/produtos", label: "02/03 · Lista de produtos + modal Novo produto" },
+  { href: "/login", label: "01/07 · Login (GitHub, Google, email+senha)" },
+  {
+    href: "/produtos",
+    label: "02/03 · Lista de produtos + modal Novo produto",
+  },
   {
     href: "/produtos/POR",
     label: "04/05/06 · Página do produto (board, composer, painel do card)",
   },
+  { href: "/esqueci-senha", label: "08 · Recuperar senha" },
+  { href: "/sem-convite", label: "10 · Sem convite" },
+  { href: "/time", label: "Time (membros, convites, roles)" },
   { href: "/design-system", label: "Design system (especímenes)" },
 ];
 

@@ -201,6 +201,179 @@ export function ExternalIcon({ size = 12 }: IconProps) {
   );
 }
 
+export function GoogleIcon({ size = 16 }: IconProps) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 18 18" aria-hidden="true">
+      <path
+        fill="#4285F4"
+        d="M17.64 9.2c0-.64-.06-1.25-.16-1.84H9v3.48h4.84a4.14 4.14 0 0 1-1.8 2.72v2.26h2.92a8.78 8.78 0 0 0 2.68-6.62z"
+      />
+      <path
+        fill="#34A853"
+        d="M9 18c2.43 0 4.47-.8 5.96-2.18l-2.92-2.26c-.8.54-1.84.86-3.04.86-2.34 0-4.32-1.58-5.03-3.7H.96v2.33A9 9 0 0 0 9 18z"
+      />
+      <path
+        fill="#FBBC05"
+        d="M3.97 10.72a5.41 5.41 0 0 1 0-3.44V4.95H.96a9 9 0 0 0 0 8.1l3.01-2.33z"
+      />
+      <path
+        fill="#EA4335"
+        d="M9 3.58c1.32 0 2.5.45 3.44 1.35l2.58-2.59A9 9 0 0 0 .96 4.95l3.01 2.33C4.68 5.16 6.66 3.58 9 3.58z"
+      />
+    </svg>
+  );
+}
+
+export function MailIcon({ size = 14 }: IconProps) {
+  return (
+    <svg
+      width={size}
+      height={size}
+      viewBox="0 0 16 16"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.4"
+      aria-hidden="true"
+    >
+      <rect x="2" y="3.5" width="12" height="9" rx="1.5" />
+      <path
+        d="m2.5 4.5 5.5 4 5.5-4"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </svg>
+  );
+}
+
+export function LockIcon({ size = 13 }: IconProps) {
+  return (
+    <svg
+      width={size}
+      height={size}
+      viewBox="0 0 16 16"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.4"
+      aria-hidden="true"
+    >
+      <rect x="3" y="7" width="10" height="7" rx="1.5" />
+      <path d="M5.5 7V5a2.5 2.5 0 0 1 5 0v2" strokeLinecap="round" />
+    </svg>
+  );
+}
+
+export function AlertTriangleIcon({ size = 15 }: IconProps) {
+  return (
+    <svg
+      width={size}
+      height={size}
+      viewBox="0 0 16 16"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.5"
+      aria-hidden="true"
+    >
+      <path
+        d="M8 5.5v3.2M8 11.2v.1M7.13 2.5 1.9 11.6a1 1 0 0 0 .87 1.5h10.46a1 1 0 0 0 .87-1.5L8.87 2.5a1 1 0 0 0-1.74 0z"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </svg>
+  );
+}
+
+export function AlertCircleIcon({ size = 13 }: IconProps) {
+  return (
+    <svg
+      width={size}
+      height={size}
+      viewBox="0 0 16 16"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.5"
+      aria-hidden="true"
+    >
+      <circle cx="8" cy="8" r="6" />
+      <path d="M8 5v3.4M8 10.8v.1" strokeLinecap="round" />
+    </svg>
+  );
+}
+
+export function ClockIcon({ size = 20 }: IconProps) {
+  return (
+    <svg
+      width={size}
+      height={size}
+      viewBox="0 0 16 16"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.4"
+      aria-hidden="true"
+    >
+      <circle cx="8" cy="8" r="6" />
+      <path d="M8 4.8V8l2.2 1.6" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  );
+}
+
+export function UsersIcon({ size = 15 }: IconProps) {
+  return (
+    <svg
+      width={size}
+      height={size}
+      viewBox="0 0 16 16"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.4"
+      aria-hidden="true"
+    >
+      <circle cx="6" cy="5.5" r="2.2" />
+      <path
+        d="M2.5 13c0-2 1.6-3.2 3.5-3.2S9.5 11 9.5 13"
+        strokeLinecap="round"
+      />
+      <circle cx="11.2" cy="6" r="1.8" />
+      <path d="M10.8 9.9c1.7.2 2.9 1.3 2.9 3.1" strokeLinecap="round" />
+    </svg>
+  );
+}
+
+export function SignOutIcon({ size = 13 }: IconProps) {
+  return (
+    <svg
+      width={size}
+      height={size}
+      viewBox="0 0 16 16"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.5"
+      aria-hidden="true"
+    >
+      <path
+        d="M6 2.5H3.5A1.5 1.5 0 0 0 2 4v8a1.5 1.5 0 0 0 1.5 1.5H6M10.5 5l3 3-3 3M13.5 8H6"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </svg>
+  );
+}
+
+export function ArrowLeftIcon({ size = 12 }: IconProps) {
+  return (
+    <svg
+      width={size}
+      height={size}
+      viewBox="0 0 16 16"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.7"
+      aria-hidden="true"
+    >
+      <path d="M10 4 6 8l4 4" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  );
+}
+
 export function GitHubIcon({ size = 18 }: IconProps) {
   return (
     <svg

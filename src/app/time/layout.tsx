@@ -1,6 +1,6 @@
 import { AppShell } from "@/components/app-shell";
 
-export default function ProdutosLayout({
+export default function TimeLayout({
   children,
 }: Readonly<{ children: React.ReactNode }>) {
   return <AppShell>{children}</AppShell>;
