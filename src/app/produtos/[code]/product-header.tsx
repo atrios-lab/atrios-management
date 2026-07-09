@@ -16,7 +16,8 @@ export interface ProductHeaderProps {
   stage: number;
   cardCount: number;
   accessCount: number;
-  active: "cards" | "acessos";
+  documentCount: number;
+  active: "cards" | "acessos" | "documentos";
   /** Detalhes do produto, exibidos entre o nome e as abas (toggle Contexto). */
   context?: ContextProduct;
 }
@@ -28,6 +29,7 @@ export function ProductHeader({
   stage: stageIndex,
   cardCount,
   accessCount,
+  documentCount,
   active,
   context,
 }: ProductHeaderProps) {
@@ -57,6 +59,12 @@ export function ProductHeader({
       label: "Acessos",
       count: accessCount,
       href: `/produtos/${code}/acessos`,
+    },
+    {
+      key: "documentos",
+      label: "Documentos",
+      count: documentCount,
+      href: `/produtos/${code}/documentos`,
     },
   ] as const;
 

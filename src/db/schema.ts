@@ -328,6 +328,139 @@ export const accessEventRelations = relations(accessEvent, ({ one }) => ({
   }),
 }));
 
+/* ---- Documentos do produto ---------------------------------------------- */
+
+export type DocumentType = "doc" | "file" | "link";
+export type DocumentAction = "created" | "edited" | "moved";
+
+export const documentFolder = pgTable(
+  "document_folder",
+  {
+    id: text("id")
+      .primaryKey()
+      .$defaultFn(() => crypto.randomUUID()),
+    productId: text("product_id")
+      .notNull()
+      .references(() => product.id, { onDelete: "cascade" }),
+    name: text("name").notNull(),
+    createdAt: timestamp("created_at").defaultNow().notNull(),
+  },
+  (table) => [
+    index("document_folder_productId_idx").on(table.productId),
+    uniqueIndex("document_folder_productId_name_uq").on(
+      table.productId,
+      table.name,
+    ),
+  ],
+);
+
+export const document = pgTable(
+  "document",
+  {
+    id: text("id")
+      .primaryKey()
+      .$defaultFn(() => crypto.randomUUID()),
+    productId: text("product_id")
+      .notNull()
+      .references(() => product.id, { onDelete: "cascade" }),
+    // restrict: excluir pasta com docs não é fluxo da v1 — mover/excluir antes
+    folderId: text("folder_id")
+      .notNull()
+      .references(() => documentFolder.id, { onDelete: "restrict" }),
+    type: text("type").$type<DocumentType>().notNull(),
+    title: text("title").notNull(),
+    // type = doc: markdown puro
+    body: text("body"),
+    // type = file (Vercel Blob, máx 25 MB)
+    fileUrl: text("file_url"),
+    fileName: text("file_name"),
+    fileSize: integer("file_size"),
+    mimeType: text("mime_type"),
+    // type = link
+    url: text("url"),
+    createdById: text("created_by_id").references(() => user.id, {
+      onDelete: "set null",
+    }),
+    updatedById: text("updated_by_id").references(() => user.id, {
+      onDelete: "set null",
+    }),
+    createdAt: timestamp("created_at").defaultNow().notNull(),
+    updatedAt: timestamp("updated_at")
+      .defaultNow()
+      .$onUpdate(() => /* @__PURE__ */ new Date())
+      .notNull(),
+  },
+  (table) => [
+    index("document_productId_idx").on(table.productId),
+    index("document_folderId_idx").on(table.folderId),
+  ],
+);
+
+export const documentEvent = pgTable(
+  "document_event",
+  {
+    id: text("id")
+      .primaryKey()
+      .$defaultFn(() => crypto.randomUUID()),
+    documentId: text("document_id")
+      .notNull()
+      .references(() => document.id, { onDelete: "cascade" }),
+    userId: text("user_id").references(() => user.id, {
+      onDelete: "set null",
+    }),
+    action: text("action").$type<DocumentAction>().notNull(),
+    // "moved": nome da pasta destino (rótulo "moveu para <detail>")
+    detail: text("detail"),
+    createdAt: timestamp("created_at").defaultNow().notNull(),
+  },
+  (table) => [index("document_event_documentId_idx").on(table.documentId)],
+);
+
+export const documentFolderRelations = relations(
+  documentFolder,
+  ({ one, many }) => ({
+    product: one(product, {
+      fields: [documentFolder.productId],
+      references: [product.id],
+    }),
+    documents: many(document),
+  }),
+);
+
+export const documentRelations = relations(document, ({ one, many }) => ({
+  product: one(product, {
+    fields: [document.productId],
+    references: [product.id],
+  }),
+  folder: one(documentFolder, {
+    fields: [document.folderId],
+    references: [documentFolder.id],
+  }),
+  createdBy: one(user, {
+    fields: [document.createdById],
+    references: [user.id],
+    relationName: "documentCreatedBy",
+  }),
+  updatedBy: one(user, {
+    fields: [document.updatedById],
+    references: [user.id],
+    relationName: "documentUpdatedBy",
+  }),
+  events: many(documentEvent),
+}));
+
+export const documentEventRelations = relations(documentEvent, ({ one }) => ({
+  document: one(document, {
+    fields: [documentEvent.documentId],
+    references: [document.id],
+  }),
+  user: one(user, {
+    fields: [documentEvent.userId],
+    references: [user.id],
+    relationName: "documentEventUser",
+  }),
+}));
+
 export const productStageEventRelations = relations(
   productStageEvent,
   ({ one }) => ({

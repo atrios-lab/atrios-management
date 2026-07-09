@@ -1,7 +1,7 @@
 import { eq } from "drizzle-orm";
 import { notFound } from "next/navigation";
 import { db } from "@/db";
-import { access } from "@/db/schema";
+import { access, document } from "@/db/schema";
 import { formatStageDate, STAGES } from "@/lib/product-constants";
 import { ProductBoard } from "./product-board";
 
@@ -21,7 +21,10 @@ export default async function ProductPage({
   });
   if (!row) notFound();
 
-  const accessCount = await db.$count(access, eq(access.productId, row.id));
+  const [accessCount, documentCount] = await Promise.all([
+    db.$count(access, eq(access.productId, row.id)),
+    db.$count(document, eq(document.productId, row.id)),
+  ]);
 
   // Data mais recente em que o produto entrou em cada etapa.
   const stageDates: (string | null)[] = STAGES.map(() => null);
@@ -33,6 +36,7 @@ export default async function ProductPage({
   return (
     <ProductBoard
       accessCount={accessCount}
+      documentCount={documentCount}
       product={{
         id: row.id,
         name: row.name,

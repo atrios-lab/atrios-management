@@ -76,10 +76,12 @@ export function ProductBoard({
   product,
   cards,
   accessCount,
+  documentCount,
 }: {
   product: BoardProduct;
   cards: BoardCard[];
   accessCount: number;
+  documentCount: number;
 }) {
   const [view, setView] = useState("kanban");
   const [composing, setComposing] = useState(false);
@@ -140,6 +142,7 @@ export function ProductBoard({
         stage={product.stage}
         cardCount={cards.length}
         accessCount={accessCount}
+        documentCount={documentCount}
         active="cards"
         context={{
           id: product.id,

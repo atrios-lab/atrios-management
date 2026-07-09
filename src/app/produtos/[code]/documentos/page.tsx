@@ -1,15 +1,13 @@
 import { eq } from "drizzle-orm";
-import { headers } from "next/headers";
 import { notFound } from "next/navigation";
 import { db } from "@/db";
-import { card, document } from "@/db/schema";
-import { auth } from "@/lib/auth";
+import { access, card } from "@/db/schema";
 import { formatStageDate, STAGES } from "@/lib/product-constants";
-import { accessRowsForProduct, productOptions } from "../../../cofre/queries";
 import { ProductHeader } from "../product-header";
-import { AccessTab } from "./access-tab";
+import { DocumentsTab } from "./documents-tab";
+import { documentGroupsForProduct } from "./queries";
 
-export default async function ProductAccessPage({
+export default async function ProductDocumentsPage({
   params,
 }: {
   params: Promise<{ code: string }>;
@@ -24,16 +22,12 @@ export default async function ProductAccessPage({
   });
   if (!product) notFound();
 
-  const session = await auth.api.getSession({ headers: await headers() });
-  const isAdmin =
-    (session?.user as { role?: string } | undefined)?.role === "admin";
-
-  const [accesses, products, cardCount, documentCount] = await Promise.all([
-    accessRowsForProduct(product.id),
-    productOptions(),
+  const [groups, cardCount, accessCount] = await Promise.all([
+    documentGroupsForProduct(product.id),
     db.$count(card, eq(card.productId, product.id)),
-    db.$count(document, eq(document.productId, product.id)),
+    db.$count(access, eq(access.productId, product.id)),
   ]);
+  const documentCount = groups.reduce((n, g) => n + g.docs.length, 0);
 
   // Data mais recente em que o produto entrou em cada etapa.
   const stageDates: (string | null)[] = STAGES.map(() => null);
@@ -49,9 +43,9 @@ export default async function ProductAccessPage({
         code={product.code}
         stage={product.stage}
         cardCount={cardCount}
-        accessCount={accesses.length}
+        accessCount={accessCount}
         documentCount={documentCount}
-        active="acessos"
+        active="documentos"
         context={{
           id: product.id,
           stage: product.stage,
@@ -65,11 +59,11 @@ export default async function ProductAccessPage({
           })),
         }}
       />
-      <AccessTab
+      <DocumentsTab
         productId={product.id}
-        accesses={accesses}
-        products={products}
-        isAdmin={isAdmin}
+        productCode={product.code}
+        productName={product.name}
+        groups={groups}
       />
     </>
   );

@@ -460,3 +460,129 @@ export function EyeOffIcon({ size = 13 }: IconProps) {
     </svg>
   );
 }
+
+/* ---- Documentos do produto (17–19) -------------------------------------- */
+
+export function FolderIcon({ size = 14 }: IconProps) {
+  return (
+    <svg
+      width={size}
+      height={size}
+      viewBox="0 0 16 16"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.4"
+      aria-hidden="true"
+    >
+      <path
+        d="M1.8 4c0-.7.5-1.2 1.2-1.2h2.7c.4 0 .7.1.9.4l.9 1h5.5c.7 0 1.2.5 1.2 1.2v6.4c0 .7-.5 1.2-1.2 1.2H3c-.7 0-1.2-.5-1.2-1.2V4Z"
+        strokeLinejoin="round"
+      />
+    </svg>
+  );
+}
+
+export function DocPageIcon({ size = 14 }: IconProps) {
+  return (
+    <svg
+      width={size}
+      height={size}
+      viewBox="0 0 16 16"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.4"
+      aria-hidden="true"
+    >
+      <path
+        d="M3.8 2.3c0-.4.3-.8.8-.8h4.7l3 3v9.2c0 .4-.4.8-.8.8H4.6c-.5 0-.8-.4-.8-.8V2.3Z"
+        strokeLinejoin="round"
+      />
+      <path d="M9.2 1.6v3.1h3.1" strokeLinejoin="round" />
+      <path d="M6.2 8.3h3.6M6.2 10.8h3.6" strokeLinecap="round" />
+    </svg>
+  );
+}
+
+export function PaperclipIcon({ size = 14 }: IconProps) {
+  return (
+    <svg
+      width={size}
+      height={size}
+      viewBox="0 0 16 16"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.4"
+      aria-hidden="true"
+    >
+      <path
+        d="m13 7.4-4.9 4.9a3 3 0 0 1-4.3-4.3L9.2 2.7a2 2 0 0 1 2.9 2.9L6.8 10.8a1 1 0 0 1-1.5-1.4l4.6-4.6"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </svg>
+  );
+}
+
+export function ChainLinkIcon({ size = 14 }: IconProps) {
+  return (
+    <svg
+      width={size}
+      height={size}
+      viewBox="0 0 16 16"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.4"
+      aria-hidden="true"
+    >
+      <path d="M6.6 9.4 9.4 6.6" strokeLinecap="round" />
+      <path
+        d="m7.6 4.2 1.3-1.3a2.7 2.7 0 0 1 3.9 3.9l-1.4 1.3"
+        strokeLinecap="round"
+      />
+      <path
+        d="m8.4 11.8-1.3 1.3a2.7 2.7 0 0 1-3.9-3.9l1.4-1.3"
+        strokeLinecap="round"
+      />
+    </svg>
+  );
+}
+
+export function DotsIcon({ size = 14 }: IconProps) {
+  return (
+    <svg
+      width={size}
+      height={size}
+      viewBox="0 0 16 16"
+      fill="currentColor"
+      aria-hidden="true"
+    >
+      <circle cx="3.4" cy="8" r="1.3" />
+      <circle cx="8" cy="8" r="1.3" />
+      <circle cx="12.6" cy="8" r="1.3" />
+    </svg>
+  );
+}
+
+export function UploadIcon({ size = 20 }: IconProps) {
+  return (
+    <svg
+      width={size}
+      height={size}
+      viewBox="0 0 16 16"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.4"
+      aria-hidden="true"
+    >
+      <path
+        d="M8 10.6V3.4M5.2 6 8 3.2 10.8 6"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+      <path
+        d="M2.5 10.8v1.7c0 .6.4 1 1 1h9c.6 0 1-.4 1-1v-1.7"
+        strokeLinecap="round"
+      />
+    </svg>
+  );
+}

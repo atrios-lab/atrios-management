@@ -22,6 +22,13 @@
       "when": 1783472301795,
       "tag": "0002_light_rafael_vega",
       "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1783610912213,
+      "tag": "0003_vengeful_bloodaxe",
+      "breakpoints": true
     }
   ]
 }
