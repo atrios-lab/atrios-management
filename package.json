@@ -5,6 +5,7 @@
   "scripts": {
     "dev": "next dev",
     "build": "next build",
+    "vercel-build": "drizzle-kit migrate && node src/db/seed-provimento.ts && next build",
     "start": "next start",
     "lint": "biome check",
     "format": "biome format --write",
