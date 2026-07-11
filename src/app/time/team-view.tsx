@@ -13,6 +13,7 @@ import {
   Button,
   IconButton,
   Input,
+  Sheet,
   StatusPill,
 } from "@/components/ui";
 
@@ -78,13 +79,15 @@ export function TeamView({
 
   return (
     <>
-      <header className="flex h-[53px] shrink-0 items-center gap-[9px] border-b border-line px-5">
-        <span className="text-sm font-semibold text-fg-1">Time</span>
+      <header className="flex h-14 shrink-0 items-center gap-[9px] border-b border-line px-4 md:h-[53px] md:px-5">
+        <span className="text-[20px] font-semibold text-fg-1 md:text-sm">
+          Time
+        </span>
         <span className="text-xs text-fg-8">{members.length}</span>
         <div className="ml-auto" />
         {isAdmin && (
           <Button icon={<PlusIcon />} onClick={() => setModalOpen(true)}>
-            Convidar
+            <span className="hidden md:inline">Convidar</span>
           </Button>
         )}
       </header>
@@ -101,7 +104,7 @@ export function TeamView({
           {members.map((m) => (
             <div
               key={m.id}
-              className="flex items-center gap-3.5 border-b border-line-subtle px-5 py-[11px]"
+              className="flex items-center gap-3.5 border-b border-line-subtle px-4 py-3 md:px-5 md:py-[11px]"
             >
               <Avatar initials={initialsOf(m.name)} size={30} />
               <div className="flex min-w-0 flex-col">
@@ -154,7 +157,7 @@ export function TeamView({
           {invites.map((i) => (
             <div
               key={i.id}
-              className="flex items-center gap-3.5 border-b border-line-subtle px-5 py-[11px]"
+              className="flex items-center gap-3.5 border-b border-line-subtle px-4 py-3 md:px-5 md:py-[11px]"
             >
               <div className="flex size-[30px] shrink-0 items-center justify-center rounded-full border border-dashed border-line-hover text-fg-7">
                 <MailIcon size={13} />
@@ -235,68 +238,60 @@ function InviteModal({
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-[rgba(4,5,7,0.62)]">
-      <div className="w-[420px] overflow-hidden rounded-panel border border-white/10 bg-surface-card shadow-modal">
-        <div className="flex items-center border-b border-line px-[18px] py-4">
-          <span className="text-[14.5px] font-semibold text-fg-1">
-            Convidar para o time
-          </span>
-          <IconButton aria-label="Fechar" className="ml-auto" onClick={onClose}>
-            <CloseIcon size={16} />
-          </IconButton>
+    <Sheet
+      mode="bottom"
+      title="Convidar para o time"
+      onClose={onClose}
+      action={{
+        label: pending ? "Enviando…" : "Enviar",
+        onClick: submit,
+        disabled: pending,
+      }}
+      panelClassName="md:w-[420px]"
+    >
+      <div className="flex flex-col gap-4 p-4 md:p-[18px]">
+        <div className="flex flex-col gap-[7px]">
+          <label
+            htmlFor="invite-email"
+            className="text-xs font-medium text-fg-5"
+          >
+            Email
+          </label>
+          <Input
+            id="invite-email"
+            size="lg"
+            type="email"
+            placeholder="pessoa@atrios.com.br"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+          />
         </div>
-        <div className="flex flex-col gap-4 p-[18px]">
-          <div className="flex flex-col gap-[7px]">
-            <label
-              htmlFor="invite-email"
-              className="text-xs font-medium text-fg-5"
-            >
-              Email
-            </label>
-            <Input
-              id="invite-email"
-              size="lg"
-              type="email"
-              placeholder="pessoa@atrios.com.br"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-            />
+        <div className="flex flex-col gap-[7px]">
+          <label
+            htmlFor="invite-role"
+            className="text-xs font-medium text-fg-5"
+          >
+            Role
+          </label>
+          <select
+            id="invite-role"
+            className="h-11 w-full cursor-pointer rounded-field border border-line-field bg-surface-1 px-3 text-base text-fg-2 outline-none transition-colors duration-200 focus:border-primary/40 md:h-[38px] md:text-sm"
+            value={role}
+            onChange={(e) => setRole(e.target.value as "admin" | "member")}
+          >
+            <option value="member">Member</option>
+            <option value="admin">Admin</option>
+          </select>
+        </div>
+        {localError && (
+          <div className="flex items-center gap-2">
+            <span className="shrink-0 text-danger">
+              <AlertCircleIcon />
+            </span>
+            <span className="text-xs text-[#e08c8c]">{localError}</span>
           </div>
-          <div className="flex flex-col gap-[7px]">
-            <label
-              htmlFor="invite-role"
-              className="text-xs font-medium text-fg-5"
-            >
-              Role
-            </label>
-            <select
-              id="invite-role"
-              className="h-[38px] w-full cursor-pointer rounded-field border border-line-field bg-surface-1 px-3 text-sm text-fg-2 outline-none transition-colors duration-200 focus:border-primary/40"
-              value={role}
-              onChange={(e) => setRole(e.target.value as "admin" | "member")}
-            >
-              <option value="member">Member</option>
-              <option value="admin">Admin</option>
-            </select>
-          </div>
-          {localError && (
-            <div className="flex items-center gap-2">
-              <span className="shrink-0 text-danger">
-                <AlertCircleIcon />
-              </span>
-              <span className="text-xs text-[#e08c8c]">{localError}</span>
-            </div>
-          )}
-        </div>
-        <div className="flex justify-end gap-[9px] border-t border-line px-[18px] py-3.5">
-          <Button variant="secondary" size="lg" onClick={onClose}>
-            Cancelar
-          </Button>
-          <Button size="lg" disabled={pending} onClick={submit}>
-            Enviar convite
-          </Button>
-        </div>
+        )}
       </div>
-    </div>
+    </Sheet>
   );
 }

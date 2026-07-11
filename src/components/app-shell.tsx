@@ -1,6 +1,7 @@
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { AppSidebar } from "@/components/app-sidebar";
+import { TabBar } from "@/components/tab-bar";
 import { db } from "@/db";
 import { auth } from "@/lib/auth";
 import { STAGES } from "@/lib/product-constants";
@@ -28,7 +29,11 @@ export async function AppShell({ children }: { children: React.ReactNode }) {
           color: STAGES[p.stage]?.color ?? STAGES[0].color,
         }))}
       />
-      <div className="flex min-w-0 flex-1 flex-col">{children}</div>
+      {/* No mobile a TabBar é fixa embaixo — o padding reserva o espaço dela. */}
+      <div className="flex min-w-0 flex-1 flex-col pb-[calc(52px+env(safe-area-inset-bottom))] md:pb-0">
+        {children}
+      </div>
+      <TabBar />
     </div>
   );
 }

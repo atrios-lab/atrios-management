@@ -74,7 +74,7 @@ export function InviteCard({
 
   if (mismatch) {
     return (
-      <AuthCard className="w-[420px]">
+      <AuthCard className="md:max-w-[420px]">
         <ErrorBanner title="Conta em outro email">
           {otherEmail ? (
             <>
@@ -101,7 +101,7 @@ export function InviteCard({
   }
 
   return (
-    <AuthCard className="w-[440px] gap-4 p-[26px]">
+    <AuthCard className="gap-4 md:max-w-[440px]">
       <div className="flex items-center gap-3">
         <Avatar initials={initialsOf(inviter)} size={38} />
         <div className="flex flex-col gap-0.5">

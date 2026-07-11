@@ -39,13 +39,15 @@ export default async function ProductsPage() {
 
   return (
     <>
-      <header className="flex h-[53px] shrink-0 items-center gap-[9px] border-b border-line px-5">
-        <span className="text-sm font-semibold text-fg-1">Produtos</span>
+      <header className="flex h-14 shrink-0 items-center gap-[9px] border-b border-line px-4 md:h-[53px] md:px-5">
+        <span className="text-[20px] font-semibold text-fg-1 md:text-sm">
+          Produtos
+        </span>
         <span className="text-xs text-fg-8">{rows.length}</span>
         <div className="ml-auto" />
         <NewProductModal />
       </header>
-      <div className="flex-1 overflow-auto p-5">
+      <div className="flex-1 overflow-auto p-4 md:p-5">
         {rows.length === 0 && (
           <div className="flex flex-col items-center gap-2 py-16 text-center">
             <span className="text-sm text-fg-5">

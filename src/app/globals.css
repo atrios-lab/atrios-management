@@ -97,6 +97,7 @@
   --ease-atr: cubic-bezier(0.4, 0, 0.2, 1);
   --animate-autopulse: autopulse 2.6s ease-in-out infinite;
   --animate-caret: caret 1s steps(1) infinite;
+  --animate-sheet-up: sheet-up 0.28s var(--ease-atr);
 }
 
 /* ---- Shared keyframes ---- */
@@ -117,6 +118,24 @@
   50.01%,
   100% {
     opacity: 0;
+  }
+}
+@keyframes sheet-up {
+  from {
+    transform: translateY(48px);
+    opacity: 0.4;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+/* Scroll horizontal sem barra visível (tabs, chips, board mobile) */
+@utility scrollbar-none {
+  scrollbar-width: none;
+  &::-webkit-scrollbar {
+    display: none;
   }
 }
 

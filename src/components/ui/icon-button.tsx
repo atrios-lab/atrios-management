@@ -22,7 +22,8 @@ export function IconButton({
     <button
       type={type}
       className={cn(
-        "inline-flex shrink-0 cursor-pointer items-center justify-center rounded-nav text-fg-5 transition-colors duration-200 hover:bg-white/[0.06] hover:text-fg-2",
+        // after: estende a área de toque para ≥44px no mobile sem mudar o visual
+        "relative inline-flex shrink-0 cursor-pointer items-center justify-center rounded-nav text-fg-5 transition-colors duration-200 after:absolute after:-inset-2.5 hover:bg-white/[0.06] hover:text-fg-2 md:after:hidden",
         tinted && "bg-white/5",
         className,
       )}

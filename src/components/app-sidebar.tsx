@@ -63,7 +63,7 @@ export function AppSidebar({
     );
 
   return (
-    <aside className="flex w-[216px] shrink-0 flex-col border-r border-line bg-surface-2 px-2.5 py-3.5">
+    <aside className="hidden w-[216px] shrink-0 flex-col border-r border-line bg-surface-2 px-2.5 py-3.5 md:flex">
       <div className="flex items-center gap-[9px] px-2 pb-3.5 pt-1.5">
         <div className="flex size-[22px] items-center justify-center rounded-nav bg-linear-160 from-primary-grad-a to-primary-grad-b">
           <ArchLogo />

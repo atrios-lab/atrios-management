@@ -35,7 +35,7 @@ export function LoginCard({ oauthError }: { oauthError: string | null }) {
   }
 
   return (
-    <div className="flex w-[352px] flex-col">
+    <div className="flex w-full max-w-[352px] flex-col">
       <div className="mb-[22px] flex size-[52px] items-center justify-center self-center rounded-panel bg-linear-160 from-primary-grad-a to-primary-grad-b [box-shadow:0_10px_30px_rgba(94,106,210,0.4)]">
         <ArchLogo size={26} />
       </div>

@@ -10,14 +10,15 @@ import {
 import { authClient } from "@/lib/auth-client";
 import { cn } from "@/lib/cn";
 
+// Botões de auth sobem para 48px no mobile (M07–M10).
 export const ctaClass =
-  "h-[42px] w-full cursor-pointer rounded-auth bg-primary text-sm font-medium text-white transition-colors duration-200 hover:bg-primary-hover disabled:cursor-default disabled:opacity-45";
+  "h-12 w-full cursor-pointer rounded-auth bg-primary text-[15px] font-medium text-white transition-colors duration-200 hover:bg-primary-hover disabled:cursor-default disabled:opacity-45 md:h-[42px] md:text-sm";
 
 export const ghostBtnClass =
-  "inline-flex h-[38px] cursor-pointer items-center justify-center gap-[7px] rounded-field border border-line-field-strong px-4 text-[13px] font-medium text-fg-3 transition-colors duration-200 hover:bg-white/[0.04]";
+  "inline-flex h-11 cursor-pointer items-center justify-center gap-[7px] rounded-field border border-line-field-strong px-4 text-[14px] font-medium text-fg-3 transition-colors duration-200 hover:bg-white/[0.04] md:h-[38px] md:text-[13px]";
 
 const socialBtnClass =
-  "flex h-[42px] w-full cursor-pointer items-center justify-center gap-2.5 rounded-auth border border-line-field-strong bg-surface-raised text-[13.5px] font-medium text-fg-1 transition-colors duration-200 hover:border-line-hover hover:bg-[#1e1f23] disabled:cursor-default disabled:opacity-45";
+  "flex h-12 w-full cursor-pointer items-center justify-center gap-2.5 rounded-auth border border-line-field-strong bg-surface-raised text-[14.5px] font-medium text-fg-1 transition-colors duration-200 hover:border-line-hover hover:bg-[#1e1f23] disabled:cursor-default disabled:opacity-45 md:h-[42px] md:text-[13.5px]";
 
 export function AuthCard({
   children,
@@ -29,7 +30,7 @@ export function AuthCard({
   return (
     <div
       className={cn(
-        "flex w-[400px] flex-col gap-3.5 rounded-panel border border-line-strong bg-surface-1 p-6 shadow-panel",
+        "flex w-full max-w-[400px] flex-col gap-3.5 rounded-panel border border-line-strong bg-surface-1 p-5 shadow-panel md:p-6",
         className,
       )}
     >
@@ -96,7 +97,8 @@ export function AuthField({
       </div>
       <input
         className={cn(
-          "h-10 w-full rounded-field border bg-surface-0 px-3 text-[13.5px] text-fg-2 outline-none transition-colors duration-200 placeholder:text-fg-8",
+          // 16px no mobile evita o zoom automático do iOS ao focar.
+          "h-11 w-full rounded-field border bg-surface-0 px-3 text-base text-fg-2 outline-none transition-colors duration-200 placeholder:text-fg-8 md:h-10 md:text-[13.5px]",
           error
             ? "border-danger/55 shadow-[0_0_0_3px_rgba(224,108,108,0.08)]"
             : "border-line-field focus:border-primary/40",

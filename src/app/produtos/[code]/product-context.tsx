@@ -22,8 +22,18 @@ export interface ContextProduct {
   repos: ContextRepo[];
 }
 
-/** Painel de detalhes do produto, entre o nome e as abas (todas as abas). */
-export function ContextPanel({ product }: { product: ContextProduct }) {
+/**
+ * Painel de detalhes do produto, entre o nome e as abas (todas as abas).
+ * Com `inSheet`, vira o conteúdo do bottom sheet mobile (M04b): coluna
+ * única e stepper vertical.
+ */
+export function ContextPanel({
+  product,
+  inSheet = false,
+}: {
+  product: ContextProduct;
+  inSheet?: boolean;
+}) {
   const [, startTransition] = useTransition();
 
   const onStageClick = (index: number) => {
@@ -32,6 +42,41 @@ export function ContextPanel({ product }: { product: ContextProduct }) {
       await setProductStage(product.id, index);
     });
   };
+
+  const stepper = (
+    <Stepper
+      vertical={inSheet}
+      steps={STAGES.map((s, i) => ({
+        name: s.name,
+        color: s.color,
+        date: product.stageDates[i] ?? undefined,
+      }))}
+      current={product.stage}
+      onStepClick={onStageClick}
+    />
+  );
+
+  if (inSheet) {
+    return (
+      <div className="flex flex-col gap-[22px] px-5 pb-6 pt-4">
+        <div>
+          <div className="mb-2 text-[11px] font-semibold uppercase tracking-[0.05em] text-fg-8">
+            Descrição
+          </div>
+          <p className="text-[14px] leading-relaxed text-fg-4">
+            {product.longDescription ?? product.description}
+          </p>
+        </div>
+        <RepoSection product={product} />
+        <div>
+          <div className="mb-2 text-[11px] font-semibold uppercase tracking-[0.05em] text-fg-8">
+            Etapa
+          </div>
+          {stepper}
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="mt-[18px] flex flex-col gap-[22px] border-t border-[rgba(255,255,255,0.055)] pb-7 pt-[18px]">
@@ -50,15 +95,7 @@ export function ContextPanel({ product }: { product: ContextProduct }) {
         <div className="mb-4 text-[11px] font-semibold uppercase tracking-[0.05em] text-fg-8">
           Etapa
         </div>
-        <Stepper
-          steps={STAGES.map((s, i) => ({
-            name: s.name,
-            color: s.color,
-            date: product.stageDates[i] ?? undefined,
-          }))}
-          current={product.stage}
-          onStepClick={onStageClick}
-        />
+        {stepper}
       </div>
     </div>
   );

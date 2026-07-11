@@ -5,6 +5,7 @@ export { IconButton } from "./icon-button";
 export { Input } from "./input";
 export { RepoChip } from "./repo-chip";
 export { SegmentedControl, type SegmentedOption } from "./segmented-control";
+export { Sheet, type SheetAction } from "./sheet";
 export { SidebarItem } from "./sidebar-item";
 export { StatusPill } from "./status-pill";
 export { type Step, Stepper } from "./stepper";

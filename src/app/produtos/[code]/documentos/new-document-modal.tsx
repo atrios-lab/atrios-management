@@ -13,7 +13,13 @@ import {
   PaperclipIcon,
   UploadIcon,
 } from "@/components/icons";
-import { Button, IconButton, Input, SegmentedControl } from "@/components/ui";
+import {
+  Button,
+  IconButton,
+  Input,
+  SegmentedControl,
+  Sheet,
+} from "@/components/ui";
 import type { DocumentType } from "@/db/schema";
 import { cn } from "@/lib/cn";
 import {
@@ -301,12 +307,6 @@ export function NewDocumentModal({
       localStorage.setItem(draftKey, JSON.stringify({ title, body }));
   }, [draftKey, title, body]);
 
-  useEffect(() => {
-    const onKey = (e: KeyboardEvent) => e.key === "Escape" && onClose();
-    window.addEventListener("keydown", onKey);
-    return () => window.removeEventListener("keydown", onKey);
-  }, [onClose]);
-
   const pickFile = (f: File | undefined | null) => {
     if (!f) return;
     if (f.size > MAX_FILE_BYTES) {
@@ -409,189 +409,50 @@ export function NewDocumentModal({
   const label = "text-xs font-medium text-fg-5";
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-[rgba(4,5,7,0.62)]">
-      <div className="w-[580px] max-w-[92vw] overflow-hidden rounded-panel border border-white/10 bg-surface-card shadow-modal">
-        <div className="flex items-center border-b border-line px-[18px] py-4">
-          <span className="text-[14.5px] font-semibold text-fg-1">
-            Novo documento
+    <Sheet
+      mode="fullscreen"
+      title="Novo documento"
+      onClose={onClose}
+      action={{
+        label: pending ? "Criando…" : "Criar",
+        onClick: submit,
+        disabled: !canCreate,
+      }}
+      footerStart={
+        tab === "doc" ? (
+          <span className="text-[11.5px] text-fg-9">
+            Salvo como rascunho automaticamente.
           </span>
-          <IconButton aria-label="Fechar" className="ml-auto" onClick={onClose}>
-            <CloseIcon size={16} />
-          </IconButton>
-        </div>
+        ) : undefined
+      }
+      panelClassName="md:w-[580px] md:max-w-[92vw]"
+    >
+      <div className="flex flex-col gap-[15px] p-4 md:p-[18px]">
+        <SegmentedControl
+          className="w-full [&>button]:flex-1"
+          options={TAB_OPTIONS}
+          value={tab}
+          onChange={(v) => {
+            setTab(v as DocumentType);
+            setError(null);
+          }}
+        />
 
-        <div className="flex flex-col gap-[15px] p-[18px]">
-          <SegmentedControl
-            className="w-full [&>button]:flex-1"
-            options={TAB_OPTIONS}
-            value={tab}
-            onChange={(v) => {
-              setTab(v as DocumentType);
-              setError(null);
-            }}
-          />
-
-          {tab === "doc" && (
-            <>
-              <div className="grid grid-cols-[1fr_200px] gap-3">
-                <div className="flex flex-col gap-[7px]">
-                  <label htmlFor="nd-title" className={label}>
-                    Título
-                  </label>
-                  <Input
-                    id="nd-title"
-                    size="lg"
-                    autoFocus
-                    value={title}
-                    onChange={(e) => setTitle(e.target.value)}
-                  />
-                </div>
-                <div className="flex flex-col gap-[7px]">
-                  <span className={label}>Pasta</span>
-                  <FolderSelect
-                    productId={productId}
-                    folders={folders}
-                    value={folderId}
-                    onChange={setFolderId}
-                  />
-                </div>
-              </div>
+        {tab === "doc" && (
+          <>
+            <div className="grid grid-cols-1 gap-3 md:grid-cols-[1fr_200px]">
               <div className="flex flex-col gap-[7px]">
-                <span className={label}>Conteúdo</span>
-                <MarkdownEditor value={body} onChange={setBody} />
-              </div>
-            </>
-          )}
-
-          {tab === "file" && (
-            <>
-              {!file ? (
-                <button
-                  type="button"
-                  onClick={() => fileInputRef.current?.click()}
-                  onDragOver={(e) => {
-                    e.preventDefault();
-                    setDragOver(true);
-                  }}
-                  onDragLeave={() => setDragOver(false)}
-                  onDrop={(e) => {
-                    e.preventDefault();
-                    setDragOver(false);
-                    pickFile(e.dataTransfer.files?.[0]);
-                  }}
-                  className={cn(
-                    "flex cursor-pointer flex-col items-center gap-2 rounded-[10px] border-[1.5px] border-dashed bg-white/[0.015] px-4 py-[26px] text-center transition-colors duration-200",
-                    dragOver
-                      ? "border-primary/60 bg-primary/5"
-                      : "border-[rgba(255,255,255,0.14)] hover:border-[rgba(255,255,255,0.25)]",
-                  )}
-                >
-                  <span className="text-primary-ink">
-                    <UploadIcon size={20} />
-                  </span>
-                  <span className="text-[13px] font-medium text-fg-2">
-                    Arraste um arquivo aqui
-                  </span>
-                  <span className="text-[11.5px] text-fg-8">
-                    ou clique para escolher · PDF, planilha ou imagem · até 25
-                    MB
-                  </span>
-                </button>
-              ) : (
-                <div className="flex items-center gap-2.5 rounded-field border border-[rgba(255,255,255,0.09)] bg-surface-1 px-3 py-2.5">
-                  <span
-                    className="flex size-[26px] shrink-0 items-center justify-center rounded-btn"
-                    style={{ background: fileType.bg, color: fileType.color }}
-                  >
-                    <PaperclipIcon />
-                  </span>
-                  <span className="min-w-0 flex-1 truncate text-[12.5px] font-medium text-fg-2">
-                    {file.name}
-                  </span>
-                  <span className="shrink-0 text-[11px] text-fg-8">
-                    {formatFileSize(file.size)}
-                  </span>
-                  <IconButton
-                    aria-label="Remover arquivo"
-                    size={22}
-                    onClick={() => setFile(null)}
-                  >
-                    <CloseIcon />
-                  </IconButton>
-                </div>
-              )}
-              <input
-                ref={fileInputRef}
-                type="file"
-                accept=".pdf,.csv,.xls,.xlsx,.ods,image/png,image/jpeg,image/webp,image/gif"
-                className="hidden"
-                onChange={(e) => {
-                  pickFile(e.target.files?.[0]);
-                  e.target.value = "";
-                }}
-              />
-              <div className="flex flex-col gap-[7px]">
-                <span className={label}>Pasta</span>
-                <FolderSelect
-                  productId={productId}
-                  folders={folders}
-                  value={folderId}
-                  onChange={setFolderId}
-                />
-              </div>
-            </>
-          )}
-
-          {tab === "link" && (
-            <>
-              <div className="flex flex-col gap-[7px]">
-                <label htmlFor="nd-url" className={label}>
-                  URL
+                <label htmlFor="nd-title" className={label}>
+                  Título
                 </label>
                 <Input
-                  id="nd-url"
+                  id="nd-title"
                   size="lg"
-                  mono
                   autoFocus
-                  placeholder="https://…"
-                  className="text-[12.5px]"
-                  value={url}
-                  onChange={(e) => setUrl(e.target.value)}
-                  onBlur={() => importTitle(url)}
-                  onPaste={(e) => {
-                    const pasted = e.clipboardData.getData("text");
-                    setTimeout(() => importTitle(pasted), 0);
-                  }}
+                  value={title}
+                  onChange={(e) => setTitle(e.target.value)}
                 />
               </div>
-              {URL_RE.test(url.trim()) && (
-                <div className="flex items-center gap-2.5 rounded-field border border-[rgba(255,255,255,0.09)] bg-surface-1 px-3 py-2.5">
-                  <span
-                    className="flex size-[26px] shrink-0 items-center justify-center rounded-btn"
-                    style={{ background: linkType.bg, color: linkType.color }}
-                  >
-                    <ChainLinkIcon />
-                  </span>
-                  <div className="flex min-w-0 flex-1 flex-col gap-px">
-                    <input
-                      aria-label="Título do link"
-                      value={linkTitle}
-                      placeholder={
-                        fetchingTitle ? "Importando título…" : "Título do link"
-                      }
-                      onChange={(e) => {
-                        setLinkTitle(e.target.value);
-                        setTitleImported(false);
-                      }}
-                      className="w-full bg-transparent text-[12.5px] font-medium text-fg-2 outline-none placeholder:text-fg-8"
-                    />
-                    <span className="truncate text-[11px] text-fg-8">
-                      {domainOf(url)}
-                      {titleImported && " · título importado do link"}
-                    </span>
-                  </div>
-                </div>
-              )}
               <div className="flex flex-col gap-[7px]">
                 <span className={label}>Pasta</span>
                 <FolderSelect
@@ -601,32 +462,159 @@ export function NewDocumentModal({
                   onChange={setFolderId}
                 />
               </div>
-              <span className="text-[11px] text-fg-9">
-                O link abre em nova aba — nada é copiado para o Átrios.
-              </span>
-            </>
-          )}
+            </div>
+            <div className="flex flex-col gap-[7px]">
+              <span className={label}>Conteúdo</span>
+              <MarkdownEditor value={body} onChange={setBody} />
+            </div>
+          </>
+        )}
 
-          {error && (
-            <p className="text-xs leading-[1.4] text-danger">{error}</p>
-          )}
-        </div>
+        {tab === "file" && (
+          <>
+            {!file ? (
+              <button
+                type="button"
+                onClick={() => fileInputRef.current?.click()}
+                onDragOver={(e) => {
+                  e.preventDefault();
+                  setDragOver(true);
+                }}
+                onDragLeave={() => setDragOver(false)}
+                onDrop={(e) => {
+                  e.preventDefault();
+                  setDragOver(false);
+                  pickFile(e.dataTransfer.files?.[0]);
+                }}
+                className={cn(
+                  "flex cursor-pointer flex-col items-center gap-2 rounded-[10px] border-[1.5px] border-dashed bg-white/[0.015] px-4 py-[26px] text-center transition-colors duration-200",
+                  dragOver
+                    ? "border-primary/60 bg-primary/5"
+                    : "border-[rgba(255,255,255,0.14)] hover:border-[rgba(255,255,255,0.25)]",
+                )}
+              >
+                <span className="text-primary-ink">
+                  <UploadIcon size={20} />
+                </span>
+                <span className="text-[13px] font-medium text-fg-2">
+                  Arraste um arquivo aqui
+                </span>
+                <span className="text-[11.5px] text-fg-8">
+                  ou clique para escolher · PDF, planilha ou imagem · até 25 MB
+                </span>
+              </button>
+            ) : (
+              <div className="flex items-center gap-2.5 rounded-field border border-[rgba(255,255,255,0.09)] bg-surface-1 px-3 py-2.5">
+                <span
+                  className="flex size-[26px] shrink-0 items-center justify-center rounded-btn"
+                  style={{ background: fileType.bg, color: fileType.color }}
+                >
+                  <PaperclipIcon />
+                </span>
+                <span className="min-w-0 flex-1 truncate text-[12.5px] font-medium text-fg-2">
+                  {file.name}
+                </span>
+                <span className="shrink-0 text-[11px] text-fg-8">
+                  {formatFileSize(file.size)}
+                </span>
+                <IconButton
+                  aria-label="Remover arquivo"
+                  size={22}
+                  onClick={() => setFile(null)}
+                >
+                  <CloseIcon />
+                </IconButton>
+              </div>
+            )}
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept=".pdf,.csv,.xls,.xlsx,.ods,image/png,image/jpeg,image/webp,image/gif"
+              className="hidden"
+              onChange={(e) => {
+                pickFile(e.target.files?.[0]);
+                e.target.value = "";
+              }}
+            />
+            <div className="flex flex-col gap-[7px]">
+              <span className={label}>Pasta</span>
+              <FolderSelect
+                productId={productId}
+                folders={folders}
+                value={folderId}
+                onChange={setFolderId}
+              />
+            </div>
+          </>
+        )}
 
-        <div className="flex items-center gap-[9px] border-t border-line px-[18px] py-3.5">
-          {tab === "doc" && (
-            <span className="text-[11.5px] text-fg-9">
-              Salvo como rascunho automaticamente.
+        {tab === "link" && (
+          <>
+            <div className="flex flex-col gap-[7px]">
+              <label htmlFor="nd-url" className={label}>
+                URL
+              </label>
+              <Input
+                id="nd-url"
+                size="lg"
+                mono
+                autoFocus
+                placeholder="https://…"
+                className="text-[12.5px]"
+                value={url}
+                onChange={(e) => setUrl(e.target.value)}
+                onBlur={() => importTitle(url)}
+                onPaste={(e) => {
+                  const pasted = e.clipboardData.getData("text");
+                  setTimeout(() => importTitle(pasted), 0);
+                }}
+              />
+            </div>
+            {URL_RE.test(url.trim()) && (
+              <div className="flex items-center gap-2.5 rounded-field border border-[rgba(255,255,255,0.09)] bg-surface-1 px-3 py-2.5">
+                <span
+                  className="flex size-[26px] shrink-0 items-center justify-center rounded-btn"
+                  style={{ background: linkType.bg, color: linkType.color }}
+                >
+                  <ChainLinkIcon />
+                </span>
+                <div className="flex min-w-0 flex-1 flex-col gap-px">
+                  <input
+                    aria-label="Título do link"
+                    value={linkTitle}
+                    placeholder={
+                      fetchingTitle ? "Importando título…" : "Título do link"
+                    }
+                    onChange={(e) => {
+                      setLinkTitle(e.target.value);
+                      setTitleImported(false);
+                    }}
+                    className="w-full bg-transparent text-[12.5px] font-medium text-fg-2 outline-none placeholder:text-fg-8"
+                  />
+                  <span className="truncate text-[11px] text-fg-8">
+                    {domainOf(url)}
+                    {titleImported && " · título importado do link"}
+                  </span>
+                </div>
+              </div>
+            )}
+            <div className="flex flex-col gap-[7px]">
+              <span className={label}>Pasta</span>
+              <FolderSelect
+                productId={productId}
+                folders={folders}
+                value={folderId}
+                onChange={setFolderId}
+              />
+            </div>
+            <span className="text-[11px] text-fg-9">
+              O link abre em nova aba — nada é copiado para o Átrios.
             </span>
-          )}
-          <div className="ml-auto" />
-          <Button variant="secondary" size="lg" onClick={onClose}>
-            Cancelar
-          </Button>
-          <Button size="lg" disabled={!canCreate} onClick={submit}>
-            {pending ? "Criando…" : "Criar documento"}
-          </Button>
-        </div>
+          </>
+        )}
+
+        {error && <p className="text-xs leading-[1.4] text-danger">{error}</p>}
       </div>
-    </div>
+    </Sheet>
   );
 }

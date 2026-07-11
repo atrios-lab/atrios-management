@@ -21,7 +21,9 @@ export default function AuthLayout({
             "radial-gradient(70% 55% at 50% 40%, #000 20%, transparent 75%)",
         }}
       />
-      <div className="relative py-10">{children}</div>
+      <div className="relative flex w-full justify-center px-5 py-10">
+        {children}
+      </div>
     </div>
   );
 }

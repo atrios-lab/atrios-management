@@ -16,10 +16,11 @@ const buttonVariants = cva(
         dashed:
           "border border-dashed border-line-hover bg-transparent text-fg-5 hover:text-fg-2",
       },
+      // No mobile todos os tamanhos sobem para alvos de toque confortáveis.
       size: {
-        sm: "h-7 px-3 text-[12.5px]",
-        md: "h-[30px] px-3 text-[13px]",
-        lg: "h-[34px] px-4 text-[13px]",
+        sm: "h-9 px-3 text-[13px] md:h-7 md:text-[12.5px]",
+        md: "h-10 px-3.5 text-[14px] md:h-[30px] md:px-3 md:text-[13px]",
+        lg: "h-11 px-4 text-[14px] md:h-[34px] md:text-[13px]",
       },
     },
     defaultVariants: { variant: "primary", size: "md" },

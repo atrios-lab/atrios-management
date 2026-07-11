@@ -9,6 +9,7 @@ import {
 } from "react";
 import {
   ArchiveIcon,
+  ArrowUpIcon,
   ChevronDownIcon,
   CloseIcon,
   CopyIcon,
@@ -25,6 +26,7 @@ import {
   IconButton,
   RepoChip,
   SegmentedControl,
+  Sheet,
   TaskCard,
 } from "@/components/ui";
 import type { CardStatus } from "@/db/schema";
@@ -35,6 +37,7 @@ import {
   repoColor,
   suggestBranch,
 } from "@/lib/product-constants";
+import { useIsMobile } from "@/lib/use-is-mobile";
 import {
   archiveCard,
   archiveDoneCards,
@@ -89,6 +92,7 @@ export function ProductBoard({
   accessCount: number;
   documentCount: number;
 }) {
+  const isMobile = useIsMobile();
   const [view, setView] = useState("kanban");
   const [composing, setComposing] = useState(false);
   const [selectedId, setSelectedId] = useState<string | null>(null);
@@ -200,11 +204,13 @@ export function ProductBoard({
         </div>
 
         {view === "kanban" ? (
-          <div className="flex min-h-0 flex-1 gap-3.5">
+          // Mobile (estilo Todoist): uma coluna por vez, snap por coluna,
+          // com a próxima aparecendo parcialmente à direita.
+          <div className="flex min-h-0 flex-1 gap-3.5 max-md:-mx-4 max-md:snap-x max-md:snap-mandatory max-md:scroll-pl-4 max-md:overflow-x-auto max-md:px-4 max-md:scrollbar-none">
             {columns.map((col) => (
               <div
                 key={col.status}
-                className="flex min-w-0 flex-1 flex-col gap-[11px]"
+                className="flex flex-col gap-[11px] max-md:w-[302px] max-md:shrink-0 max-md:snap-start md:min-w-0 md:flex-1"
                 onDragOver={(e) => {
                   // sempre preventDefault no alvo: garante que o drop seja aceito
                   // mesmo antes de o estado draggingId ter feito flush.
@@ -256,7 +262,7 @@ export function ProductBoard({
                       "border-dashed border-primary/45 bg-surface-selected/40",
                   )}
                 >
-                  {col.status === "todo" && composing && (
+                  {col.status === "todo" && composing && !isMobile && (
                     <CardComposer
                       nextId={displayCardId(product.code, nextSeq)}
                       repos={product.repos}
@@ -404,6 +410,15 @@ export function ProductBoard({
         )}
       </div>
 
+      {composing && isMobile && (
+        <CardComposerSheet
+          nextId={displayCardId(product.code, nextSeq)}
+          repos={product.repos}
+          onCreate={onCreateCard}
+          onCancel={() => setComposing(false)}
+        />
+      )}
+
       {selected && (
         <CardPanel
           key={selected.id}
@@ -493,6 +508,79 @@ function CardComposer({
   );
 }
 
+/* ---- Compositor mobile (M05) — sheet fixado na base, padrão Todoist ---- */
+
+function CardComposerSheet({
+  nextId,
+  repos,
+  onCreate,
+  onCancel,
+}: {
+  nextId: string;
+  repos: BoardRepo[];
+  onCreate: (title: string, repoId?: string) => void;
+  onCancel: () => void;
+}) {
+  const [title, setTitle] = useState("");
+  const [repoId, setRepoId] = useState("");
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => inputRef.current?.focus(), []);
+
+  const submit = () => {
+    if (title.trim()) onCreate(title.trim(), repoId || undefined);
+  };
+
+  return (
+    <div className="fixed inset-0 z-50 md:hidden">
+      <button
+        type="button"
+        aria-label="Cancelar"
+        className="absolute inset-0 cursor-default bg-[rgba(4,5,7,0.5)]"
+        onClick={onCancel}
+      />
+      <div className="absolute inset-x-0 bottom-0 animate-sheet-up rounded-t-[20px] border-t border-white/12 bg-surface-raised px-4 pb-[max(16px,env(safe-area-inset-bottom))] pt-4">
+        <input
+          ref={inputRef}
+          value={title}
+          onChange={(e) => setTitle(e.target.value)}
+          onKeyDown={(e) => {
+            if (e.key === "Enter") submit();
+            if (e.key === "Escape") onCancel();
+          }}
+          placeholder="Título do card"
+          className="w-full bg-transparent text-base text-[#ececed] outline-none placeholder:text-fg-8"
+        />
+        <div className="mt-3.5 flex items-center gap-2.5">
+          <select
+            aria-label="Repositório"
+            value={repoId}
+            onChange={(e) => setRepoId(e.target.value)}
+            className="h-9 cursor-pointer rounded-pill border border-line-field-strong bg-surface-1 px-3 text-[13px] text-fg-3 outline-none"
+          >
+            <option value="">sem repo</option>
+            {repos.map((r) => (
+              <option key={r.id} value={r.id}>
+                {r.label}
+              </option>
+            ))}
+          </select>
+          <span className="font-mono text-[11.5px] text-fg-9">{nextId}</span>
+          <button
+            type="button"
+            aria-label="Criar card"
+            disabled={!title.trim()}
+            onClick={submit}
+            className="ml-auto flex size-11 shrink-0 cursor-pointer items-center justify-center rounded-full bg-primary text-white shadow-brand transition-colors duration-150 active:bg-primary-hover disabled:cursor-default disabled:opacity-45"
+          >
+            <ArrowUpIcon size={17} />
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 /* ---- Card panel (screen 06) -------------------------------------------- */
 
 function CardPanel({
@@ -515,12 +603,6 @@ function CardPanel({
   const [error, setError] = useState<string | null>(null);
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [pending, startTransition] = useTransition();
-
-  useEffect(() => {
-    const onKey = (e: KeyboardEvent) => e.key === "Escape" && onClose();
-    window.addEventListener("keydown", onKey);
-    return () => window.removeEventListener("keydown", onKey);
-  }, [onClose]);
 
   const run = (fn: () => Promise<{ error?: string }>) => {
     startTransition(async () => {
@@ -550,204 +632,201 @@ function CardPanel({
 
   return (
     <>
-      <div className="fixed inset-0 z-50 flex items-center justify-center">
-        <button
-          type="button"
-          aria-label="Fechar"
-          className="absolute inset-0 cursor-default bg-[rgba(4,5,7,0.55)]"
-          onClick={onClose}
-        />
-        <div
-          className="relative w-[720px] max-w-[92vw] overflow-hidden rounded-panel border border-white/10 bg-surface-card shadow-modal"
-          role="dialog"
-          aria-label={displayId}
-        >
-          <div className="flex items-center gap-2.5 border-b border-line px-[18px] py-3.5">
-            <span className="rounded-chip bg-white/5 px-[7px] py-0.5 font-mono text-xs text-fg-6">
-              {displayId}
-            </span>
-            <select
-              aria-label="Status do card"
-              value={card.status}
-              onChange={(e) =>
-                run(() => setCardStatus(card.id, e.target.value as CardStatus))
-              }
-              className="h-[27px] cursor-pointer rounded-pill border border-line-field-strong bg-surface-1 px-[9px] text-xs font-medium outline-none"
-              style={{ color: column.color }}
-            >
-              {BOARD_COLUMNS.map((c) => (
-                <option key={c.status} value={c.status}>
-                  {c.title}
-                </option>
-              ))}
-            </select>
-            <div className="ml-auto" />
-            {card.status === "done" && (
-              <IconButton
-                aria-label="Arquivar card"
-                className="hover:text-primary-fg"
-                disabled={pending}
-                onClick={archiveThis}
-              >
-                <ArchiveIcon size={15} />
-              </IconButton>
-            )}
+      <Sheet
+        mode="bottom"
+        ariaLabel={displayId}
+        onClose={onClose}
+        panelClassName="md:w-[720px] md:max-w-[92vw]"
+      >
+        <div className="flex items-center gap-2.5 border-b border-line px-4 py-3 md:px-[18px] md:py-3.5">
+          <span className="rounded-chip bg-white/5 px-[7px] py-0.5 font-mono text-xs text-fg-6">
+            {displayId}
+          </span>
+          <select
+            aria-label="Status do card"
+            value={card.status}
+            onChange={(e) =>
+              run(() => setCardStatus(card.id, e.target.value as CardStatus))
+            }
+            className="h-[27px] cursor-pointer rounded-pill border border-line-field-strong bg-surface-1 px-[9px] text-xs font-medium outline-none"
+            style={{ color: column.color }}
+          >
+            {BOARD_COLUMNS.map((c) => (
+              <option key={c.status} value={c.status}>
+                {c.title}
+              </option>
+            ))}
+          </select>
+          <div className="ml-auto" />
+          {card.status === "done" && (
             <IconButton
-              aria-label="Excluir card"
-              className="hover:text-danger"
-              onClick={() => setConfirmDelete(true)}
+              aria-label="Arquivar card"
+              className="hover:text-primary-fg"
+              disabled={pending}
+              onClick={archiveThis}
             >
-              <TrashIcon size={15} />
+              <ArchiveIcon size={15} />
             </IconButton>
-            <IconButton aria-label="Fechar" onClick={onClose}>
-              <CloseIcon size={16} />
-            </IconButton>
-          </div>
-          <div className="flex">
-            <div className="min-w-0 flex-1 border-r border-line px-5 py-[22px]">
-              <input
-                aria-label="Título do card"
-                value={title}
-                onChange={(e) => setTitle(e.target.value)}
-                onBlur={saveTitle}
-                onKeyDown={(e) => e.key === "Enter" && e.currentTarget.blur()}
-                className="mb-[18px] w-full bg-transparent text-[19px] font-semibold leading-[1.3] tracking-[-0.01em] text-fg-hi outline-none"
-              />
-              <div className="mb-[9px] text-[11px] font-semibold uppercase tracking-[0.05em] text-fg-8">
-                Descrição
-              </div>
-              <textarea
-                aria-label="Descrição do card"
-                value={description}
-                onChange={(e) => setDescription(e.target.value)}
-                onBlur={saveDescription}
-                placeholder="Sem descrição."
-                rows={6}
-                className="w-full resize-none bg-transparent text-[13.5px] leading-[1.65] text-fg-4 outline-none placeholder:text-fg-8"
-              />
+          )}
+          <IconButton
+            aria-label="Excluir card"
+            className="hover:text-danger"
+            onClick={() => setConfirmDelete(true)}
+          >
+            <TrashIcon size={15} />
+          </IconButton>
+          <IconButton
+            aria-label="Fechar"
+            className="max-md:hidden"
+            onClick={onClose}
+          >
+            <CloseIcon size={16} />
+          </IconButton>
+        </div>
+        <div className="flex flex-col md:flex-row">
+          <div className="min-w-0 flex-1 border-line px-4 py-5 md:border-r md:px-5 md:py-[22px]">
+            <input
+              aria-label="Título do card"
+              value={title}
+              onChange={(e) => setTitle(e.target.value)}
+              onBlur={saveTitle}
+              onKeyDown={(e) => e.key === "Enter" && e.currentTarget.blur()}
+              className="mb-[18px] w-full bg-transparent text-[19px] font-semibold leading-[1.3] tracking-[-0.01em] text-fg-hi outline-none"
+            />
+            <div className="mb-[9px] text-[11px] font-semibold uppercase tracking-[0.05em] text-fg-8">
+              Descrição
             </div>
-            <div className="flex w-[264px] shrink-0 flex-col gap-5 px-5 py-[22px]">
-              <div className="flex flex-col gap-2">
-                <span className="text-[11px] font-semibold uppercase tracking-[0.05em] text-fg-8">
-                  Repositório
-                </span>
-                <div className="flex h-9 items-center gap-2 rounded-field border border-line-field bg-surface-1 px-[11px]">
-                  {card.repoId && (
-                    <span
-                      className="size-[7px] shrink-0 rounded-full"
-                      style={{
-                        background: repoColor(
-                          product.repos.find((r) => r.id === card.repoId)
-                            ?.label ?? "",
-                        ),
-                      }}
-                    />
-                  )}
-                  <select
-                    aria-label="Repositório do card"
-                    value={card.repoId ?? ""}
-                    onChange={(e) =>
-                      run(() =>
-                        updateCard(card.id, { repoId: e.target.value || null }),
-                      )
-                    }
-                    className="w-full cursor-pointer bg-transparent text-[13px] text-fg-2 outline-none"
-                  >
-                    <option value="">sem repo</option>
-                    {product.repos.map((r) => (
-                      <option key={r.id} value={r.id}>
-                        {r.label}
-                      </option>
-                    ))}
-                  </select>
-                </div>
+            <textarea
+              aria-label="Descrição do card"
+              value={description}
+              onChange={(e) => setDescription(e.target.value)}
+              onBlur={saveDescription}
+              placeholder="Sem descrição."
+              rows={6}
+              className="w-full resize-none bg-transparent text-[13.5px] leading-[1.65] text-fg-4 outline-none placeholder:text-fg-8"
+            />
+          </div>
+          <div className="flex w-full shrink-0 flex-col gap-5 border-t border-line px-4 py-5 md:w-[264px] md:border-t-0 md:px-5 md:py-[22px]">
+            <div className="flex flex-col gap-2">
+              <span className="text-[11px] font-semibold uppercase tracking-[0.05em] text-fg-8">
+                Repositório
+              </span>
+              <div className="flex h-9 items-center gap-2 rounded-field border border-line-field bg-surface-1 px-[11px]">
+                {card.repoId && (
+                  <span
+                    className="size-[7px] shrink-0 rounded-full"
+                    style={{
+                      background: repoColor(
+                        product.repos.find((r) => r.id === card.repoId)
+                          ?.label ?? "",
+                      ),
+                    }}
+                  />
+                )}
+                <select
+                  aria-label="Repositório do card"
+                  value={card.repoId ?? ""}
+                  onChange={(e) =>
+                    run(() =>
+                      updateCard(card.id, { repoId: e.target.value || null }),
+                    )
+                  }
+                  className="w-full cursor-pointer bg-transparent text-[13px] text-fg-2 outline-none"
+                >
+                  <option value="">sem repo</option>
+                  {product.repos.map((r) => (
+                    <option key={r.id} value={r.id}>
+                      {r.label}
+                    </option>
+                  ))}
+                </select>
               </div>
-              <div className="flex flex-col gap-2">
-                <span className="text-[11px] font-semibold uppercase tracking-[0.05em] text-fg-8">
-                  Branch sugerida
+            </div>
+            <div className="flex flex-col gap-2">
+              <span className="text-[11px] font-semibold uppercase tracking-[0.05em] text-fg-8">
+                Branch sugerida
+              </span>
+              <div className="flex h-9 items-center gap-2 rounded-field border border-line-field bg-surface-1 py-0 pl-[11px] pr-2">
+                <span className="truncate font-mono text-xs text-fg-3">
+                  {branch}
                 </span>
-                <div className="flex h-9 items-center gap-2 rounded-field border border-line-field bg-surface-1 py-0 pl-[11px] pr-2">
-                  <span className="truncate font-mono text-xs text-fg-3">
-                    {branch}
-                  </span>
-                  <IconButton
-                    aria-label="Copiar branch"
-                    tinted
-                    className="ml-auto hover:bg-primary/25 hover:text-primary-fg-hi"
-                    onClick={() => navigator.clipboard?.writeText(branch)}
+                <IconButton
+                  aria-label="Copiar branch"
+                  tinted
+                  className="ml-auto hover:bg-primary/25 hover:text-primary-fg-hi"
+                  onClick={() => navigator.clipboard?.writeText(branch)}
+                >
+                  <CopyIcon />
+                </IconButton>
+              </div>
+            </div>
+            <div className="flex flex-col gap-2">
+              <span className="text-[11px] font-semibold uppercase tracking-[0.05em] text-fg-8">
+                Pull Request
+              </span>
+              {card.prNumber ? (
+                <div className="flex items-center gap-2 rounded-field border border-status-done/25 bg-status-done/10 py-[5px] pl-[11px] pr-1.5">
+                  <a
+                    href={card.prUrl ?? "#"}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="flex min-w-0 flex-1 items-center gap-2"
                   >
-                    <CopyIcon />
+                    <span className="text-status-done">
+                      <GitGraphIcon size={14} />
+                    </span>
+                    <span className="font-mono text-[12.5px] text-fg-2">
+                      #{card.prNumber}
+                    </span>
+                    <span className="ml-auto shrink-0 text-fg-7">
+                      <ExternalIcon />
+                    </span>
+                  </a>
+                  <IconButton
+                    aria-label="Remover vínculo do PR"
+                    size={22}
+                    className="hover:text-danger"
+                    onClick={() => run(() => unlinkPr(card.id))}
+                  >
+                    <CloseIcon />
                   </IconButton>
                 </div>
-              </div>
-              <div className="flex flex-col gap-2">
-                <span className="text-[11px] font-semibold uppercase tracking-[0.05em] text-fg-8">
-                  Pull Request
+              ) : (
+                <div className="flex items-center gap-1.5">
+                  <input
+                    aria-label="Link do PR"
+                    value={prInput}
+                    onChange={(e) => setPrInput(e.target.value)}
+                    onKeyDown={(e) =>
+                      e.key === "Enter" &&
+                      prInput.trim() &&
+                      run(() => linkPr(card.id, prInput))
+                    }
+                    placeholder="Colar link do PR"
+                    className="h-8 min-w-0 flex-1 rounded-field border border-dashed border-line-hover bg-transparent px-[11px] text-xs text-fg-3 outline-none placeholder:text-fg-7"
+                  />
+                  <Button
+                    size="sm"
+                    variant="secondary"
+                    disabled={pending || !prInput.trim()}
+                    onClick={() => run(() => linkPr(card.id, prInput))}
+                  >
+                    Vincular
+                  </Button>
+                </div>
+              )}
+              {error && (
+                <span className="text-[11px] leading-[1.4] text-danger">
+                  {error}
                 </span>
-                {card.prNumber ? (
-                  <div className="flex items-center gap-2 rounded-field border border-status-done/25 bg-status-done/10 py-[5px] pl-[11px] pr-1.5">
-                    <a
-                      href={card.prUrl ?? "#"}
-                      target="_blank"
-                      rel="noreferrer"
-                      className="flex min-w-0 flex-1 items-center gap-2"
-                    >
-                      <span className="text-status-done">
-                        <GitGraphIcon size={14} />
-                      </span>
-                      <span className="font-mono text-[12.5px] text-fg-2">
-                        #{card.prNumber}
-                      </span>
-                      <span className="ml-auto shrink-0 text-fg-7">
-                        <ExternalIcon />
-                      </span>
-                    </a>
-                    <IconButton
-                      aria-label="Remover vínculo do PR"
-                      size={22}
-                      className="hover:text-danger"
-                      onClick={() => run(() => unlinkPr(card.id))}
-                    >
-                      <CloseIcon />
-                    </IconButton>
-                  </div>
-                ) : (
-                  <div className="flex items-center gap-1.5">
-                    <input
-                      aria-label="Link do PR"
-                      value={prInput}
-                      onChange={(e) => setPrInput(e.target.value)}
-                      onKeyDown={(e) =>
-                        e.key === "Enter" &&
-                        prInput.trim() &&
-                        run(() => linkPr(card.id, prInput))
-                      }
-                      placeholder="Colar link do PR"
-                      className="h-8 min-w-0 flex-1 rounded-field border border-dashed border-line-hover bg-transparent px-[11px] text-xs text-fg-3 outline-none placeholder:text-fg-7"
-                    />
-                    <Button
-                      size="sm"
-                      variant="secondary"
-                      disabled={pending || !prInput.trim()}
-                      onClick={() => run(() => linkPr(card.id, prInput))}
-                    >
-                      Vincular
-                    </Button>
-                  </div>
-                )}
-                {error && (
-                  <span className="text-[11px] leading-[1.4] text-danger">
-                    {error}
-                  </span>
-                )}
-                <span className="text-[11px] leading-[1.4] text-fg-9">
-                  Cole o link de um PR do GitHub para vincular ao card.
-                </span>
-              </div>
+              )}
+              <span className="text-[11px] leading-[1.4] text-fg-9">
+                Cole o link de um PR do GitHub para vincular ao card.
+              </span>
             </div>
           </div>
         </div>
-      </div>
+      </Sheet>
       {confirmDelete && (
         <DeleteCardConfirm
           displayId={displayId}
@@ -784,32 +863,23 @@ function DeleteCardConfirm({
   onConfirm: () => void;
 }) {
   return (
-    <div className="fixed inset-0 z-[60] flex items-center justify-center bg-[rgba(4,5,7,0.62)]">
-      <div className="w-[380px] overflow-hidden rounded-panel border border-white/10 bg-surface-card shadow-modal">
-        <div className="flex flex-col gap-2 p-[18px]">
-          <span className="text-[14.5px] font-semibold text-fg-1">
-            Excluir card
-          </span>
-          <p className="text-[13px] leading-[1.55] text-fg-5">
-            O card {displayId} será excluído permanentemente. Essa ação não tem
-            volta.
-          </p>
-        </div>
-        <div className="flex justify-end gap-[9px] border-t border-line px-[18px] py-3.5">
-          <Button variant="secondary" size="lg" onClick={onCancel}>
-            Cancelar
-          </Button>
-          <Button
-            size="lg"
-            className="bg-danger hover:bg-[#e57f7f]"
-            disabled={pending}
-            onClick={onConfirm}
-          >
-            {pending ? "Excluindo…" : "Excluir"}
-          </Button>
-        </div>
-      </div>
-    </div>
+    <Sheet
+      mode="bottom"
+      title="Excluir card"
+      onClose={onCancel}
+      action={{
+        label: pending ? "Excluindo…" : "Excluir",
+        onClick: onConfirm,
+        disabled: pending,
+        destructive: true,
+      }}
+      panelClassName="md:w-[380px]"
+    >
+      <p className="p-4 text-[13.5px] leading-[1.55] text-fg-5 md:p-[18px] md:text-[13px]">
+        O card {displayId} será excluído permanentemente. Essa ação não tem
+        volta.
+      </p>
+    </Sheet>
   );
 }
 
@@ -827,12 +897,6 @@ function ArchivedPanel({
   const [, startTransition] = useTransition();
   const [deletingId, setDeletingId] = useState<string | null>(null);
 
-  useEffect(() => {
-    const onKey = (e: KeyboardEvent) => e.key === "Escape" && onClose();
-    window.addEventListener("keydown", onKey);
-    return () => window.removeEventListener("keydown", onKey);
-  }, [onClose]);
-
   const restore = (id: string) => {
     startTransition(async () => {
       await archiveCard(id, false);
@@ -849,73 +913,70 @@ function ArchivedPanel({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center">
-      <button
-        type="button"
-        aria-label="Fechar"
-        className="absolute inset-0 cursor-default bg-[rgba(4,5,7,0.55)]"
-        onClick={onClose}
-      />
-      <div
-        className="relative flex max-h-[70vh] w-[480px] max-w-[92vw] flex-col overflow-hidden rounded-panel border border-white/10 bg-surface-card shadow-modal"
-        role="dialog"
-        aria-label="Cards arquivados"
-      >
-        <div className="flex items-center gap-2.5 border-b border-line px-[18px] py-3.5">
-          <span className="text-[14.5px] font-semibold text-fg-1">
-            Cards arquivados
-          </span>
-          <div className="ml-auto" />
-          <IconButton aria-label="Fechar" onClick={onClose}>
-            <CloseIcon size={16} />
-          </IconButton>
-        </div>
-        <div className="flex-1 overflow-auto">
-          {cards.length === 0 ? (
-            <p className="p-[18px] text-[13px] text-fg-7">
-              Nenhum card arquivado.
-            </p>
-          ) : (
-            cards.map((card) => {
-              const column =
-                BOARD_COLUMNS.find((c) => c.status === card.status) ??
-                BOARD_COLUMNS[0];
-              return (
-                <div
-                  key={card.id}
-                  className="flex items-center gap-2.5 border-b border-line-subtle px-[18px] py-2.5"
-                >
-                  <span
-                    className="size-2 shrink-0 rounded-full"
-                    style={{ background: column.color }}
-                  />
-                  <span className="min-w-[58px] shrink-0 font-mono text-[11.5px] text-fg-7">
-                    {displayCardId(product.code, card.seq)}
-                  </span>
-                  <span className="min-w-0 flex-1 truncate text-[13px] text-fg-2">
-                    {card.title}
-                  </span>
-                  <Button
-                    size="sm"
-                    variant="secondary"
-                    onClick={() => restore(card.id)}
-                  >
-                    Restaurar
-                  </Button>
-                  <IconButton
-                    aria-label="Excluir card"
-                    className="hover:text-danger"
-                    disabled={deletingId === card.id}
-                    onClick={() => remove(card.id)}
-                  >
-                    <TrashIcon size={14} />
-                  </IconButton>
-                </div>
-              );
-            })
-          )}
-        </div>
+    <Sheet
+      mode="bottom"
+      ariaLabel="Cards arquivados"
+      onClose={onClose}
+      panelClassName="md:w-[480px] md:max-w-[92vw]"
+    >
+      <div className="flex items-center gap-2.5 border-b border-line px-4 py-3 md:px-[18px] md:py-3.5">
+        <span className="text-[15px] font-semibold text-fg-1 md:text-[14.5px]">
+          Cards arquivados
+        </span>
+        <div className="ml-auto" />
+        <IconButton
+          aria-label="Fechar"
+          className="max-md:hidden"
+          onClick={onClose}
+        >
+          <CloseIcon size={16} />
+        </IconButton>
       </div>
-    </div>
+      <div>
+        {cards.length === 0 ? (
+          <p className="p-[18px] text-[13px] text-fg-7">
+            Nenhum card arquivado.
+          </p>
+        ) : (
+          cards.map((card) => {
+            const column =
+              BOARD_COLUMNS.find((c) => c.status === card.status) ??
+              BOARD_COLUMNS[0];
+            return (
+              <div
+                key={card.id}
+                className="flex items-center gap-2.5 border-b border-line-subtle px-[18px] py-2.5"
+              >
+                <span
+                  className="size-2 shrink-0 rounded-full"
+                  style={{ background: column.color }}
+                />
+                <span className="min-w-[58px] shrink-0 font-mono text-[11.5px] text-fg-7">
+                  {displayCardId(product.code, card.seq)}
+                </span>
+                <span className="min-w-0 flex-1 truncate text-[13px] text-fg-2">
+                  {card.title}
+                </span>
+                <Button
+                  size="sm"
+                  variant="secondary"
+                  onClick={() => restore(card.id)}
+                >
+                  Restaurar
+                </Button>
+                <IconButton
+                  aria-label="Excluir card"
+                  className="hover:text-danger"
+                  disabled={deletingId === card.id}
+                  onClick={() => remove(card.id)}
+                >
+                  <TrashIcon size={14} />
+                </IconButton>
+              </div>
+            );
+          })
+        )}
+      </div>
+    </Sheet>
   );
 }

@@ -654,3 +654,43 @@ export function ArchiveIcon({ size = 14 }: IconProps) {
     </svg>
   );
 }
+
+export function UserIcon({ size = 15 }: IconProps) {
+  return (
+    <svg
+      width={size}
+      height={size}
+      viewBox="0 0 16 16"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.4"
+      aria-hidden="true"
+    >
+      <circle cx="8" cy="5.2" r="2.7" />
+      <path
+        d="M2.8 13.6c.6-2.5 2.7-3.9 5.2-3.9s4.6 1.4 5.2 3.9"
+        strokeLinecap="round"
+      />
+    </svg>
+  );
+}
+
+export function ArrowUpIcon({ size = 15 }: IconProps) {
+  return (
+    <svg
+      width={size}
+      height={size}
+      viewBox="0 0 16 16"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.6"
+      aria-hidden="true"
+    >
+      <path
+        d="M8 13V3M3.6 7.2 8 2.8l4.4 4.4"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </svg>
+  );
+}

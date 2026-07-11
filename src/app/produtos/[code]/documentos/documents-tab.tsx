@@ -6,14 +6,13 @@ import {
   ChainLinkIcon,
   ChevronDownIcon,
   ChevronRightIcon,
-  CloseIcon,
   DocPageIcon,
   FolderIcon,
   PaperclipIcon,
   PlusIcon,
   SearchIcon,
 } from "@/components/icons";
-import { Avatar, Button, IconButton, Input } from "@/components/ui";
+import { Avatar, Button, Input, Sheet } from "@/components/ui";
 import type { DocumentType } from "@/db/schema";
 import { DOCUMENT_TYPES, initialsOf } from "@/lib/document-constants";
 import { createFolder } from "./actions";
@@ -65,7 +64,7 @@ export function DocumentsTab({
   };
 
   return (
-    <div className="flex min-h-0 flex-1 flex-col gap-3.5 px-[22px] pb-[22px] pt-4">
+    <div className="flex min-h-0 flex-1 flex-col gap-3.5 px-4 pb-4 pt-4 md:px-[22px] md:pb-[22px]">
       {isEmpty ? (
         <EmptyState
           productName={productName}
@@ -75,7 +74,7 @@ export function DocumentsTab({
       ) : (
         <>
           <div className="flex shrink-0 items-center gap-2.5">
-            <div className="flex h-8 w-[260px] items-center gap-2 rounded-field border border-[rgba(255,255,255,0.09)] bg-surface-1 px-[11px]">
+            <div className="flex h-10 min-w-0 flex-1 items-center gap-2 rounded-field border border-[rgba(255,255,255,0.09)] bg-surface-1 px-[11px] md:h-8 md:flex-none md:basis-[260px]">
               <span className="text-fg-8">
                 <SearchIcon />
               </span>
@@ -83,7 +82,7 @@ export function DocumentsTab({
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}
                 placeholder="Buscar documento…"
-                className="min-w-0 flex-1 bg-transparent text-[12.5px] text-fg-2 outline-none placeholder:text-fg-8"
+                className="min-w-0 flex-1 bg-transparent text-base text-fg-2 outline-none placeholder:text-fg-8 md:text-[12.5px]"
               />
             </div>
             <div className="ml-auto" />
@@ -92,10 +91,10 @@ export function DocumentsTab({
               icon={<FolderIcon size={13} />}
               onClick={() => setModal("folder")}
             >
-              Nova pasta
+              <span className="hidden md:inline">Nova pasta</span>
             </Button>
             <Button icon={<PlusIcon />} onClick={() => setModal("doc")}>
-              Novo documento
+              <span className="hidden md:inline">Novo documento</span>
             </Button>
           </div>
 
@@ -179,21 +178,31 @@ function DocumentRowItem({
       >
         {TYPE_ICONS[row.type]}
       </span>
-      <span className="w-[250px] shrink-0 truncate text-[13px] font-medium text-fg-2">
-        {row.title}
+      {/* No mobile: título+tipo na 1ª linha, "editado há X" na 2ª. */}
+      <span className="flex min-w-0 flex-1 flex-col gap-0.5 md:contents">
+        <span className="flex min-w-0 items-center gap-2 md:contents">
+          <span className="min-w-0 truncate text-[14px] font-medium text-fg-2 md:w-[250px] md:shrink-0 md:text-[13px]">
+            {row.title}
+          </span>
+          <span className="inline-flex shrink-0 items-center gap-1.5 rounded-chip border border-line bg-white/[0.04] px-[7px] py-0.5 text-[11px] text-fg-5">
+            <span
+              className="size-1.5 rounded-full"
+              style={{ background: t.color }}
+            />
+            {row.badge}
+          </span>
+        </span>
+        <span className="truncate text-[11.5px] text-fg-9 md:hidden">
+          {row.updatedLabel}
+        </span>
       </span>
-      <span className="inline-flex shrink-0 items-center gap-1.5 rounded-chip border border-line bg-white/[0.04] px-[7px] py-0.5 text-[11px] text-fg-5">
-        <span
-          className="size-1.5 rounded-full"
-          style={{ background: t.color }}
-        />
-        {row.badge}
-      </span>
-      <span className="flex-1" />
-      <span className="w-[170px] shrink-0 truncate text-right text-[11.5px] text-fg-9">
+      <span className="hidden flex-1 md:block" />
+      <span className="hidden w-[170px] shrink-0 truncate text-right text-[11.5px] text-fg-9 md:inline">
         {row.updatedLabel}
       </span>
-      <Avatar size={20} initials={initialsOf(row.updatedByName ?? "—")} />
+      <span className="hidden md:block">
+        <Avatar size={20} initials={initialsOf(row.updatedByName ?? "—")} />
+      </span>
       <span className="shrink-0 text-fg-9">
         <ChevronRightIcon size={14} />
       </span>
@@ -201,7 +210,7 @@ function DocumentRowItem({
   );
 
   const rowClass =
-    "flex w-full cursor-pointer items-center gap-3 border-b border-[rgba(255,255,255,0.035)] px-4 py-[9px] transition-colors duration-200 hover:bg-white/[0.022]";
+    "flex w-full cursor-pointer items-center gap-3 border-b border-[rgba(255,255,255,0.035)] px-4 py-3 transition-colors duration-200 hover:bg-white/[0.022] md:py-[9px]";
 
   // doc → leitor · file → preview/download · link → nova aba
   if (row.type === "doc") {
@@ -288,42 +297,32 @@ export function NewFolderModal({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-[rgba(4,5,7,0.62)]">
-      <div className="w-[380px] overflow-hidden rounded-panel border border-white/10 bg-surface-card shadow-modal">
-        <div className="flex items-center border-b border-line px-[18px] py-4">
-          <span className="text-[14.5px] font-semibold text-fg-1">
-            Nova pasta
-          </span>
-          <IconButton aria-label="Fechar" className="ml-auto" onClick={onClose}>
-            <CloseIcon size={16} />
-          </IconButton>
-        </div>
-        <div className="flex flex-col gap-[7px] p-[18px]">
-          <label htmlFor="nf-name" className="text-xs font-medium text-fg-5">
-            Nome da pasta
-          </label>
-          <Input
-            id="nf-name"
-            size="lg"
-            autoFocus
-            value={name}
-            placeholder="Estratégia, Contratos, Specs…"
-            onChange={(e) => setName(e.target.value)}
-            onKeyDown={(e) => e.key === "Enter" && submit()}
-          />
-          {error && (
-            <p className="text-xs leading-[1.4] text-danger">{error}</p>
-          )}
-        </div>
-        <div className="flex justify-end gap-[9px] border-t border-line px-[18px] py-3.5">
-          <Button variant="secondary" size="lg" onClick={onClose}>
-            Cancelar
-          </Button>
-          <Button size="lg" disabled={pending || !name.trim()} onClick={submit}>
-            {pending ? "Criando…" : "Criar pasta"}
-          </Button>
-        </div>
+    <Sheet
+      mode="bottom"
+      title="Nova pasta"
+      onClose={onClose}
+      action={{
+        label: pending ? "Criando…" : "Criar",
+        onClick: submit,
+        disabled: pending || !name.trim(),
+      }}
+      panelClassName="md:w-[380px]"
+    >
+      <div className="flex flex-col gap-[7px] p-4 md:p-[18px]">
+        <label htmlFor="nf-name" className="text-xs font-medium text-fg-5">
+          Nome da pasta
+        </label>
+        <Input
+          id="nf-name"
+          size="lg"
+          autoFocus
+          value={name}
+          placeholder="Estratégia, Contratos, Specs…"
+          onChange={(e) => setName(e.target.value)}
+          onKeyDown={(e) => e.key === "Enter" && submit()}
+        />
+        {error && <p className="text-xs leading-[1.4] text-danger">{error}</p>}
       </div>
-    </div>
+    </Sheet>
   );
 }

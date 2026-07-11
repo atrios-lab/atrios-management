@@ -10,12 +10,12 @@ import {
   useTransition,
 } from "react";
 import {
+  ArrowLeftIcon,
   ChevronRightIcon,
-  CloseIcon,
   DotsIcon,
   FolderIcon,
 } from "@/components/icons";
-import { Avatar, Button, IconButton, Input } from "@/components/ui";
+import { Avatar, Button, IconButton, Input, Sheet } from "@/components/ui";
 import { cn } from "@/lib/cn";
 import { initialsOf } from "@/lib/document-constants";
 import {
@@ -66,27 +66,32 @@ export function DocumentReader({
 
   return (
     <>
-      {/* breadcrumb + ações */}
-      <div className="flex h-11 shrink-0 items-center gap-2 border-b border-line-subtle px-[22px]">
+      {/* breadcrumb (desktop) / voltar (mobile) + ações */}
+      <div className="flex h-11 shrink-0 items-center gap-2 border-b border-line-subtle px-4 md:px-[22px]">
         <Link
           href={`/produtos/${productCode}`}
-          className="text-[12.5px] text-fg-6 transition-colors duration-200 hover:text-fg-3"
+          className="hidden text-[12.5px] text-fg-6 transition-colors duration-200 hover:text-fg-3 md:inline"
         >
           {productName}
         </Link>
-        <span className="text-fg-9">
+        <span className="hidden text-fg-9 md:inline">
           <ChevronRightIcon />
         </span>
         <Link
           href={`/produtos/${productCode}/documentos`}
-          className="text-[12.5px] text-fg-6 transition-colors duration-200 hover:text-fg-3"
+          className="flex min-h-11 items-center gap-1.5 text-[14px] text-fg-6 transition-colors duration-200 hover:text-fg-3 md:min-h-0 md:text-[12.5px]"
         >
+          <span className="md:hidden">
+            <ArrowLeftIcon size={13} />
+          </span>
           Documentos
         </Link>
-        <span className="text-fg-9">
+        <span className="hidden text-fg-9 md:inline">
           <ChevronRightIcon />
         </span>
-        <span className="truncate text-[12.5px] text-fg-5">{doc.title}</span>
+        <span className="hidden truncate text-[12.5px] text-fg-5 md:inline">
+          {doc.title}
+        </span>
         <div className="ml-auto" />
         <Button variant="secondary" size="sm" onClick={() => setModal("edit")}>
           Editar
@@ -100,8 +105,8 @@ export function DocumentReader({
       </div>
 
       <div className="flex min-h-0 flex-1">
-        {/* corpo central */}
-        <div className="min-w-0 flex-1 overflow-y-auto px-14 py-11">
+        {/* corpo central — coluna estreita de leitura (M19) */}
+        <div className="min-w-0 flex-1 overflow-y-auto px-5 py-7 md:px-14 md:py-11">
           <div className="mx-auto max-w-[640px]">
             <span className="mb-4 inline-flex items-center gap-1.5 rounded-pill border border-line bg-white/[0.04] px-[9px] py-[3px] text-[11.5px] text-fg-5">
               <span className="text-fg-6">
@@ -109,10 +114,10 @@ export function DocumentReader({
               </span>
               {doc.folderName}
             </span>
-            <h1 className="mb-2.5 text-[28px] font-semibold tracking-[-0.02em] text-fg-hi">
+            <h1 className="mb-2.5 text-[25px] font-semibold tracking-[-0.02em] text-fg-hi md:text-[28px]">
               {doc.title}
             </h1>
-            <p className="mb-[34px] text-[12.5px] text-fg-8">
+            <p className="mb-7 text-[12.5px] text-fg-8 md:mb-[34px]">
               Editado {doc.updatedRelative} por {doc.updatedByName ?? "—"} ·
               criado em {doc.createdAtLabel} por {doc.createdByName ?? "—"}
             </p>
@@ -120,8 +125,8 @@ export function DocumentReader({
           </div>
         </div>
 
-        {/* painel lateral */}
-        <aside className="flex w-[264px] shrink-0 flex-col gap-5 overflow-y-auto border-l border-line p-5">
+        {/* painel lateral (só desktop) */}
+        <aside className="hidden w-[264px] shrink-0 flex-col gap-5 overflow-y-auto border-l border-line p-5 md:flex">
           <div className="flex flex-col gap-[9px]">
             <span className={sectionLabel}>Pasta</span>
             <span className="inline-flex items-center gap-2 text-[12.5px] text-fg-2">
@@ -335,12 +340,6 @@ function EditDocModal({
   const [error, setError] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
 
-  useEffect(() => {
-    const onKey = (e: KeyboardEvent) => e.key === "Escape" && onClose();
-    window.addEventListener("keydown", onKey);
-    return () => window.removeEventListener("keydown", onKey);
-  }, [onClose]);
-
   const submit = () => {
     if (pending) return;
     startTransition(async () => {
@@ -356,61 +355,47 @@ function EditDocModal({
   const label = "text-xs font-medium text-fg-5";
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-[rgba(4,5,7,0.62)]">
-      <div className="w-[580px] max-w-[92vw] overflow-hidden rounded-panel border border-white/10 bg-surface-card shadow-modal">
-        <div className="flex items-center border-b border-line px-[18px] py-4">
-          <span className="text-[14.5px] font-semibold text-fg-1">
-            Editar documento
-          </span>
-          <IconButton aria-label="Fechar" className="ml-auto" onClick={onClose}>
-            <CloseIcon size={16} />
-          </IconButton>
-        </div>
-        <div className="flex flex-col gap-[15px] p-[18px]">
-          <div className="grid grid-cols-[1fr_200px] gap-3">
-            <div className="flex flex-col gap-[7px]">
-              <label htmlFor="ed-title" className={label}>
-                Título
-              </label>
-              <Input
-                id="ed-title"
-                size="lg"
-                value={title}
-                onChange={(e) => setTitle(e.target.value)}
-              />
-            </div>
-            <div className="flex flex-col gap-[7px]">
-              <span className={label}>Pasta</span>
-              <FolderSelect
-                productId={productId}
-                folders={folders}
-                value={folderId}
-                onChange={setFolderId}
-              />
-            </div>
+    <Sheet
+      mode="fullscreen"
+      title="Editar documento"
+      onClose={onClose}
+      action={{
+        label: pending ? "Salvando…" : "Salvar",
+        onClick: submit,
+        disabled: pending || !title.trim(),
+      }}
+      panelClassName="md:w-[580px] md:max-w-[92vw]"
+    >
+      <div className="flex flex-col gap-[15px] p-4 md:p-[18px]">
+        <div className="grid grid-cols-1 gap-3 md:grid-cols-[1fr_200px]">
+          <div className="flex flex-col gap-[7px]">
+            <label htmlFor="ed-title" className={label}>
+              Título
+            </label>
+            <Input
+              id="ed-title"
+              size="lg"
+              value={title}
+              onChange={(e) => setTitle(e.target.value)}
+            />
           </div>
           <div className="flex flex-col gap-[7px]">
-            <span className={label}>Conteúdo</span>
-            <MarkdownEditor value={body} onChange={setBody} minHeight={240} />
+            <span className={label}>Pasta</span>
+            <FolderSelect
+              productId={productId}
+              folders={folders}
+              value={folderId}
+              onChange={setFolderId}
+            />
           </div>
-          {error && (
-            <p className="text-xs leading-[1.4] text-danger">{error}</p>
-          )}
         </div>
-        <div className="flex justify-end gap-[9px] border-t border-line px-[18px] py-3.5">
-          <Button variant="secondary" size="lg" onClick={onClose}>
-            Cancelar
-          </Button>
-          <Button
-            size="lg"
-            disabled={pending || !title.trim()}
-            onClick={submit}
-          >
-            {pending ? "Salvando…" : "Salvar"}
-          </Button>
+        <div className="flex flex-col gap-[7px]">
+          <span className={label}>Conteúdo</span>
+          <MarkdownEditor value={body} onChange={setBody} minHeight={240} />
         </div>
+        {error && <p className="text-xs leading-[1.4] text-danger">{error}</p>}
       </div>
-    </div>
+    </Sheet>
   );
 }
 
@@ -440,43 +425,29 @@ function RenameModal({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-[rgba(4,5,7,0.62)]">
-      <div className="w-[380px] overflow-hidden rounded-panel border border-white/10 bg-surface-card shadow-modal">
-        <div className="flex items-center border-b border-line px-[18px] py-4">
-          <span className="text-[14.5px] font-semibold text-fg-1">
-            Renomear documento
-          </span>
-          <IconButton aria-label="Fechar" className="ml-auto" onClick={onClose}>
-            <CloseIcon size={16} />
-          </IconButton>
-        </div>
-        <div className="flex flex-col gap-[7px] p-[18px]">
-          <Input
-            aria-label="Título"
-            size="lg"
-            autoFocus
-            value={title}
-            onChange={(e) => setTitle(e.target.value)}
-            onKeyDown={(e) => e.key === "Enter" && submit()}
-          />
-          {error && (
-            <p className="text-xs leading-[1.4] text-danger">{error}</p>
-          )}
-        </div>
-        <div className="flex justify-end gap-[9px] border-t border-line px-[18px] py-3.5">
-          <Button variant="secondary" size="lg" onClick={onClose}>
-            Cancelar
-          </Button>
-          <Button
-            size="lg"
-            disabled={pending || !title.trim()}
-            onClick={submit}
-          >
-            {pending ? "Salvando…" : "Salvar"}
-          </Button>
-        </div>
+    <Sheet
+      mode="bottom"
+      title="Renomear documento"
+      onClose={onClose}
+      action={{
+        label: pending ? "Salvando…" : "Salvar",
+        onClick: submit,
+        disabled: pending || !title.trim(),
+      }}
+      panelClassName="md:w-[380px]"
+    >
+      <div className="flex flex-col gap-[7px] p-4 md:p-[18px]">
+        <Input
+          aria-label="Título"
+          size="lg"
+          autoFocus
+          value={title}
+          onChange={(e) => setTitle(e.target.value)}
+          onKeyDown={(e) => e.key === "Enter" && submit()}
+        />
+        {error && <p className="text-xs leading-[1.4] text-danger">{error}</p>}
       </div>
-    </div>
+    </Sheet>
   );
 }
 
@@ -507,34 +478,25 @@ function DeleteConfirm({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-[rgba(4,5,7,0.62)]">
-      <div className="w-[380px] overflow-hidden rounded-panel border border-white/10 bg-surface-card shadow-modal">
-        <div className="flex flex-col gap-2 p-[18px]">
-          <span className="text-[14.5px] font-semibold text-fg-1">
-            Excluir documento
-          </span>
-          <p className="text-[13px] leading-[1.55] text-fg-5">
-            "{doc.title}" será excluído com o histórico de atividade. Essa ação
-            não tem volta.
-          </p>
-          {error && (
-            <p className="text-xs leading-[1.4] text-danger">{error}</p>
-          )}
-        </div>
-        <div className="flex justify-end gap-[9px] border-t border-line px-[18px] py-3.5">
-          <Button variant="secondary" size="lg" onClick={onClose}>
-            Cancelar
-          </Button>
-          <Button
-            size="lg"
-            className="bg-danger hover:bg-[#e57f7f]"
-            disabled={pending}
-            onClick={submit}
-          >
-            {pending ? "Excluindo…" : "Excluir"}
-          </Button>
-        </div>
+    <Sheet
+      mode="bottom"
+      title="Excluir documento"
+      onClose={onClose}
+      action={{
+        label: pending ? "Excluindo…" : "Excluir",
+        onClick: submit,
+        disabled: pending,
+        destructive: true,
+      }}
+      panelClassName="md:w-[380px]"
+    >
+      <div className="flex flex-col gap-2 p-4 md:p-[18px]">
+        <p className="text-[13.5px] leading-[1.55] text-fg-5 md:text-[13px]">
+          "{doc.title}" será excluído com o histórico de atividade. Essa ação
+          não tem volta.
+        </p>
+        {error && <p className="text-xs leading-[1.4] text-danger">{error}</p>}
       </div>
-    </div>
+    </Sheet>
   );
 }

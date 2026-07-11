@@ -64,34 +64,39 @@ export function VaultGlobal({
 
   return (
     <>
-      <header className="flex h-[53px] shrink-0 items-center gap-[9px] border-b border-line px-5">
-        <span className="text-sm font-semibold text-fg-1">Cofre</span>
+      <header className="flex h-14 shrink-0 items-center gap-[9px] border-b border-line px-4 md:h-[53px] md:px-5">
+        <span className="text-[20px] font-semibold text-fg-1 md:text-sm">
+          Cofre
+        </span>
         <span className="text-xs text-fg-8">{accesses.length}</span>
         <div className="ml-auto" />
         <Button icon={<PlusIcon />} onClick={() => setModal("new")}>
-          Novo acesso
+          <span className="hidden md:inline">Novo acesso</span>
         </Button>
       </header>
-      <div className="flex min-h-0 flex-1 flex-col gap-3.5 p-5">
-        <div className="flex shrink-0 items-center gap-2.5">
-          <div className="flex gap-0.5 rounded-field border border-line bg-[#0c0d0f] p-0.5">
-            <FilterTab
-              active={productFilter === "all"}
-              onClick={() => setProductFilter("all")}
-            >
-              Todos
-            </FilterTab>
-            {filterTabs.map((p) => (
+      <div className="flex min-h-0 flex-1 flex-col gap-3.5 p-4 md:p-5">
+        <div className="flex shrink-0 flex-col gap-2.5 md:flex-row md:items-center">
+          {/* Chips de filtro roláveis no mobile (M16). */}
+          <div className="-mx-4 overflow-x-auto px-4 scrollbar-none md:mx-0 md:px-0">
+            <div className="flex w-max gap-0.5 rounded-field border border-line bg-[#0c0d0f] p-0.5">
               <FilterTab
-                key={p.id}
-                active={productFilter === p.id}
-                onClick={() => setProductFilter(p.id)}
+                active={productFilter === "all"}
+                onClick={() => setProductFilter("all")}
               >
-                {p.name}
+                Todos
               </FilterTab>
-            ))}
+              {filterTabs.map((p) => (
+                <FilterTab
+                  key={p.id}
+                  active={productFilter === p.id}
+                  onClick={() => setProductFilter(p.id)}
+                >
+                  {p.name}
+                </FilterTab>
+              ))}
+            </div>
           </div>
-          <div className="ml-auto flex h-8 w-[240px] items-center gap-2 rounded-field border border-[rgba(255,255,255,0.09)] bg-surface-1 px-[11px]">
+          <div className="flex h-10 items-center gap-2 rounded-field border border-[rgba(255,255,255,0.09)] bg-surface-1 px-[11px] md:ml-auto md:h-8 md:w-[240px]">
             <span className="text-fg-8">
               <SearchIcon />
             </span>
@@ -99,7 +104,7 @@ export function VaultGlobal({
               value={query}
               onChange={(e) => setQuery(e.target.value)}
               placeholder="Buscar acesso…"
-              className="min-w-0 flex-1 bg-transparent text-[12.5px] text-fg-2 outline-none placeholder:text-fg-8"
+              className="min-w-0 flex-1 bg-transparent text-base text-fg-2 outline-none placeholder:text-fg-8 md:text-[12.5px]"
             />
           </div>
         </div>
@@ -176,7 +181,7 @@ function FilterTab({
       type="button"
       onClick={onClick}
       className={cn(
-        "inline-flex h-[30px] cursor-pointer items-center rounded-[6px] px-3 text-[12.5px] font-medium transition-colors duration-200",
+        "inline-flex h-9 shrink-0 cursor-pointer items-center whitespace-nowrap rounded-[6px] px-3 text-[13px] font-medium transition-colors duration-200 md:h-[30px] md:text-[12.5px]",
         active ? "bg-white/[0.09] text-fg-2" : "text-fg-6 hover:text-fg-3",
       )}
     >

@@ -44,13 +44,13 @@ export function AccessTab({
   const openRow = openId ? accesses.find((a) => a.id === openId) : null;
 
   return (
-    <div className="flex min-h-0 flex-1 flex-col gap-3.5 px-[22px] pb-[22px] pt-4">
+    <div className="flex min-h-0 flex-1 flex-col gap-3.5 px-4 pb-4 pt-4 md:px-[22px] md:pb-[22px]">
       {accesses.length === 0 ? (
         <EmptyState onNew={() => setModal("new")} />
       ) : (
         <>
           <div className="flex shrink-0 items-center gap-2.5">
-            <div className="flex h-8 w-[260px] items-center gap-2 rounded-field border border-[rgba(255,255,255,0.09)] bg-surface-1 px-[11px]">
+            <div className="flex h-10 min-w-0 flex-1 items-center gap-2 rounded-field border border-[rgba(255,255,255,0.09)] bg-surface-1 px-[11px] md:h-8 md:flex-none md:basis-[260px]">
               <span className="text-fg-8">
                 <SearchIcon />
               </span>
@@ -58,12 +58,12 @@ export function AccessTab({
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}
                 placeholder="Buscar acesso…"
-                className="min-w-0 flex-1 bg-transparent text-[12.5px] text-fg-2 outline-none placeholder:text-fg-8"
+                className="min-w-0 flex-1 bg-transparent text-base text-fg-2 outline-none placeholder:text-fg-8 md:text-[12.5px]"
               />
             </div>
             <div className="ml-auto" />
             <Button icon={<PlusIcon />} onClick={() => setModal("new")}>
-              Novo acesso
+              <span className="hidden md:inline">Novo acesso</span>
             </Button>
           </div>
           <div className="min-h-0 flex-1 overflow-auto rounded-[10px] border border-[rgba(255,255,255,0.07)] bg-surface-1">

@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Inter } from "next/font/google";
 import "./globals.css";
 
@@ -11,6 +11,12 @@ const inter = Inter({
 export const metadata: Metadata = {
   title: "Átrios Management",
   description: "Gestão dos produtos de software da Átrios",
+};
+
+// viewport-fit=cover libera as safe areas (env()) no iOS — tab bar e sheets.
+export const viewport: Viewport = {
+  themeColor: "#06070a",
+  viewportFit: "cover",
 };
 
 export default function RootLayout({
