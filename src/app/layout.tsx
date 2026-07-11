@@ -13,10 +13,12 @@ export const metadata: Metadata = {
   description: "Gestão dos produtos de software da Átrios",
 };
 
-// viewport-fit=cover libera as safe areas (env()) no iOS — tab bar e sheets.
+// Sem viewport-fit=cover: com ele o conteúdo se estende por baixo da status
+// bar no iOS e o header das páginas some atrás do chrome do browser. No modo
+// padrão o browser confina a página à área segura e os paddings env() do
+// tab bar/sheets viram no-ops.
 export const viewport: Viewport = {
   themeColor: "#06070a",
-  viewportFit: "cover",
 };
 
 export default function RootLayout({
