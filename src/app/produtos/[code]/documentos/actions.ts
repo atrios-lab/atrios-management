@@ -8,6 +8,8 @@ import { db } from "@/db";
 import * as schema from "@/db/schema";
 import { auth } from "@/lib/auth";
 import { isAcceptedFileType, MAX_FILE_BYTES } from "@/lib/document-constants";
+import { publish } from "@/lib/realtime/publish";
+import { channels } from "@/lib/realtime/types";
 
 type Result = { error?: string };
 
@@ -15,6 +17,14 @@ type Result = { error?: string };
 async function requireUser() {
   const session = await auth.api.getSession({ headers: await headers() });
   return session?.user ?? null;
+}
+
+async function notifyDocuments(productId: string, actorId?: string) {
+  await publish({
+    channel: channels.documents(productId),
+    type: "changed",
+    actorId,
+  });
 }
 
 /** Unique violation (23505); drizzle embrulha o erro do pg em `cause`. */
@@ -39,7 +49,8 @@ export async function createFolder(
   productId: string,
   name: string,
 ): Promise<Result & { id?: string; name?: string }> {
-  if (!(await requireUser())) return { error: "Sessão expirada." };
+  const user = await requireUser();
+  if (!user) return { error: "Sessão expirada." };
   const trimmed = name.trim();
   if (!trimmed) return { error: "Informe o nome da pasta." };
 
@@ -49,6 +60,7 @@ export async function createFolder(
       .values({ productId, name: trimmed })
       .returning();
     revalidatePath("/produtos", "layout");
+    await notifyDocuments(productId, user.id);
     return { id: row.id, name: row.name };
   } catch (e) {
     if (isUniqueViolation(e))
@@ -100,6 +112,7 @@ export async function createDocDocument(
     user.id,
   );
   revalidatePath("/produtos", "layout");
+  await notifyDocuments(productId, user.id);
   return { id };
 }
 
@@ -133,6 +146,7 @@ export async function createFileDocument(
     user.id,
   );
   revalidatePath("/produtos", "layout");
+  await notifyDocuments(productId, user.id);
   return { id };
 }
 
@@ -172,6 +186,7 @@ export async function createLinkDocument(
     user.id,
   );
   revalidatePath("/produtos", "layout");
+  await notifyDocuments(productId, user.id);
   return { id };
 }
 
@@ -307,6 +322,7 @@ export async function updateDocument(
     }
   });
   revalidatePath("/produtos", "layout");
+  await notifyDocuments(doc.productId, user.id);
   return {};
 }
 
@@ -331,6 +347,7 @@ export async function renameDocument(
     action: "edited",
   });
   revalidatePath("/produtos", "layout");
+  await notifyDocuments(updated.productId, user.id);
   return {};
 }
 
@@ -360,11 +377,13 @@ export async function moveDocument(
     });
   });
   revalidatePath("/produtos", "layout");
+  await notifyDocuments(doc.productId, user.id);
   return {};
 }
 
 export async function deleteDocument(docId: string): Promise<Result> {
-  if (!(await requireUser())) return { error: "Sessão expirada." };
+  const user = await requireUser();
+  if (!user) return { error: "Sessão expirada." };
 
   const doc = await loadDocument(docId);
   if (!doc) return { error: "Documento não encontrado." };
@@ -377,5 +396,6 @@ export async function deleteDocument(docId: string): Promise<Result> {
     } catch {}
   }
   revalidatePath("/produtos", "layout");
+  await notifyDocuments(doc.productId, user.id);
   return {};
 }

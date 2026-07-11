@@ -8,6 +8,8 @@ import type { CardStatus } from "@/db/schema";
 import * as schema from "@/db/schema";
 import { auth } from "@/lib/auth";
 import { PRODUCT_CODE_RE, STAGES } from "@/lib/product-constants";
+import { publish } from "@/lib/realtime/publish";
+import { channels } from "@/lib/realtime/types";
 
 type Result = { error?: string };
 
@@ -16,6 +18,16 @@ const CARD_STATUSES: CardStatus[] = ["todo", "progress", "review", "done"];
 /** Toda mutation exige sessão — qualquer membro gerencia produtos (design D2). */
 async function requireSession() {
   return auth.api.getSession({ headers: await headers() });
+}
+
+/** Avisa os boards abertos do produto para ressincronizarem. */
+async function notifyProduct(
+  productId: string,
+  type: string,
+  actorId?: string,
+  id?: string,
+) {
+  await publish({ channel: channels.product(productId), type, actorId, id });
 }
 
 /** Unique violation (23505); drizzle embrulha o erro do pg em `cause`. */
@@ -72,7 +84,8 @@ export async function updateProduct(
   productId: string,
   patch: { name?: string; description?: string; longDescription?: string },
 ): Promise<Result> {
-  if (!(await requireSession())) return { error: "Sessão expirada." };
+  const session = await requireSession();
+  if (!session) return { error: "Sessão expirada." };
 
   const set: Partial<typeof schema.product.$inferInsert> = {};
   if (patch.name !== undefined) {
@@ -93,6 +106,7 @@ export async function updateProduct(
     .returning();
   if (!updated) return { error: "Produto não encontrado." };
   revalidatePath("/", "layout");
+  await notifyProduct(productId, "product.updated", session.user.id);
   return {};
 }
 
@@ -100,7 +114,8 @@ export async function setProductStage(
   productId: string,
   stage: number,
 ): Promise<Result> {
-  if (!(await requireSession())) return { error: "Sessão expirada." };
+  const session = await requireSession();
+  if (!session) return { error: "Sessão expirada." };
   if (!Number.isInteger(stage) || stage < 0 || stage >= STAGES.length)
     return { error: "Etapa inválida." };
 
@@ -112,6 +127,7 @@ export async function setProductStage(
   if (!updated) return { error: "Produto não encontrado." };
   await db.insert(schema.productStageEvent).values({ productId, stage });
   revalidatePath("/", "layout");
+  await notifyProduct(productId, "product.updated", session.user.id);
   return {};
 }
 
@@ -120,7 +136,8 @@ export async function addRepo(
   label: string,
   name: string,
 ): Promise<Result> {
-  if (!(await requireSession())) return { error: "Sessão expirada." };
+  const session = await requireSession();
+  if (!session) return { error: "Sessão expirada." };
   if (!label.trim() || !name.trim())
     return { error: "Informe rótulo e nome do repositório." };
   await db.insert(schema.productRepo).values({
@@ -129,13 +146,20 @@ export async function addRepo(
     name: name.trim(),
   });
   revalidatePath("/produtos", "layout");
+  await notifyProduct(productId, "product.updated", session.user.id);
   return {};
 }
 
 export async function removeRepo(repoId: string): Promise<Result> {
-  if (!(await requireSession())) return { error: "Sessão expirada." };
-  await db.delete(schema.productRepo).where(eq(schema.productRepo.id, repoId));
+  const session = await requireSession();
+  if (!session) return { error: "Sessão expirada." };
+  const [deleted] = await db
+    .delete(schema.productRepo)
+    .where(eq(schema.productRepo.id, repoId))
+    .returning();
   revalidatePath("/produtos", "layout");
+  if (deleted)
+    await notifyProduct(deleted.productId, "product.updated", session.user.id);
   return {};
 }
 
@@ -154,7 +178,8 @@ export async function createCard(
   title: string,
   repoId?: string,
 ): Promise<Result & { id?: string; seq?: number }> {
-  if (!(await requireSession())) return { error: "Sessão expirada." };
+  const session = await requireSession();
+  if (!session) return { error: "Sessão expirada." };
   const trimmed = title.trim();
   if (!trimmed) return { error: "Informe o título do card." };
 
@@ -183,6 +208,7 @@ export async function createCard(
   }
   await touchProduct(productId);
   revalidatePath("/produtos", "layout");
+  await notifyProduct(productId, "card.created", session.user.id, row.id);
   return { id: row.id, seq: row.seq };
 }
 
@@ -190,7 +216,8 @@ export async function setCardStatus(
   cardId: string,
   status: CardStatus,
 ): Promise<Result> {
-  if (!(await requireSession())) return { error: "Sessão expirada." };
+  const session = await requireSession();
+  if (!session) return { error: "Sessão expirada." };
   if (!CARD_STATUSES.includes(status)) return { error: "Status inválido." };
   const [updated] = await db
     .update(schema.card)
@@ -200,6 +227,12 @@ export async function setCardStatus(
   if (!updated) return { error: "Card não encontrado." };
   await touchProduct(updated.productId);
   revalidatePath("/produtos", "layout");
+  await notifyProduct(
+    updated.productId,
+    "card.updated",
+    session.user.id,
+    cardId,
+  );
   return {};
 }
 
@@ -207,7 +240,8 @@ export async function updateCard(
   cardId: string,
   patch: { title?: string; description?: string; repoId?: string | null },
 ): Promise<Result> {
-  if (!(await requireSession())) return { error: "Sessão expirada." };
+  const session = await requireSession();
+  if (!session) return { error: "Sessão expirada." };
 
   const set: Partial<typeof schema.card.$inferInsert> = {};
   if (patch.title !== undefined) {
@@ -247,13 +281,20 @@ export async function updateCard(
   if (!updated) return { error: "Card não encontrado." };
   await touchProduct(updated.productId);
   revalidatePath("/produtos", "layout");
+  await notifyProduct(
+    updated.productId,
+    "card.updated",
+    session.user.id,
+    cardId,
+  );
   return {};
 }
 
 const PR_URL_RE = /^https:\/\/github\.com\/[^/]+\/[^/]+\/pull\/(\d+)\/?$/;
 
 export async function linkPr(cardId: string, url: string): Promise<Result> {
-  if (!(await requireSession())) return { error: "Sessão expirada." };
+  const session = await requireSession();
+  if (!session) return { error: "Sessão expirada." };
   const match = url.trim().match(PR_URL_RE);
   if (!match) return { error: "Cole um link de PR do GitHub (…/pull/123)." };
   const [updated] = await db
@@ -264,11 +305,18 @@ export async function linkPr(cardId: string, url: string): Promise<Result> {
   if (!updated) return { error: "Card não encontrado." };
   await touchProduct(updated.productId);
   revalidatePath("/produtos", "layout");
+  await notifyProduct(
+    updated.productId,
+    "card.updated",
+    session.user.id,
+    cardId,
+  );
   return {};
 }
 
 export async function unlinkPr(cardId: string): Promise<Result> {
-  if (!(await requireSession())) return { error: "Sessão expirada." };
+  const session = await requireSession();
+  if (!session) return { error: "Sessão expirada." };
   const [updated] = await db
     .update(schema.card)
     .set({ prUrl: null, prNumber: null })
@@ -277,11 +325,18 @@ export async function unlinkPr(cardId: string): Promise<Result> {
   if (!updated) return { error: "Card não encontrado." };
   await touchProduct(updated.productId);
   revalidatePath("/produtos", "layout");
+  await notifyProduct(
+    updated.productId,
+    "card.updated",
+    session.user.id,
+    cardId,
+  );
   return {};
 }
 
 export async function deleteCard(cardId: string): Promise<Result> {
-  if (!(await requireSession())) return { error: "Sessão expirada." };
+  const session = await requireSession();
+  if (!session) return { error: "Sessão expirada." };
   const [deleted] = await db
     .delete(schema.card)
     .where(eq(schema.card.id, cardId))
@@ -289,6 +344,12 @@ export async function deleteCard(cardId: string): Promise<Result> {
   if (!deleted) return { error: "Card não encontrado." };
   await touchProduct(deleted.productId);
   revalidatePath("/produtos", "layout");
+  await notifyProduct(
+    deleted.productId,
+    "card.removed",
+    session.user.id,
+    cardId,
+  );
   return {};
 }
 
@@ -296,7 +357,8 @@ export async function archiveCard(
   cardId: string,
   archived: boolean,
 ): Promise<Result> {
-  if (!(await requireSession())) return { error: "Sessão expirada." };
+  const session = await requireSession();
+  if (!session) return { error: "Sessão expirada." };
   const [updated] = await db
     .update(schema.card)
     .set({ archived })
@@ -305,11 +367,18 @@ export async function archiveCard(
   if (!updated) return { error: "Card não encontrado." };
   await touchProduct(updated.productId);
   revalidatePath("/produtos", "layout");
+  await notifyProduct(
+    updated.productId,
+    "card.archived",
+    session.user.id,
+    cardId,
+  );
   return {};
 }
 
 export async function archiveDoneCards(productId: string): Promise<Result> {
-  if (!(await requireSession())) return { error: "Sessão expirada." };
+  const session = await requireSession();
+  if (!session) return { error: "Sessão expirada." };
   await db
     .update(schema.card)
     .set({ archived: true })
@@ -322,5 +391,6 @@ export async function archiveDoneCards(productId: string): Promise<Result> {
     );
   await touchProduct(productId);
   revalidatePath("/produtos", "layout");
+  await notifyProduct(productId, "card.archived", session.user.id);
   return {};
 }

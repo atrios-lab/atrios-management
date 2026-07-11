@@ -1,12 +1,16 @@
 import { and, desc, eq, gte, isNotNull, lt } from "drizzle-orm";
+import { headers } from "next/headers";
 import Link from "next/link";
+import { RealtimeRefresh } from "@/components/realtime-refresh";
 import { Button } from "@/components/ui";
 import { db } from "@/db";
 import type { DiagnosticoStatusFunil } from "@/db/schema";
 import * as schema from "@/db/schema";
+import { auth } from "@/lib/auth";
 import { ESCOPO_LABEL, STATUS_FUNIL_LABEL } from "@/lib/diagnostico/constants";
 import { statusPorScore } from "@/lib/diagnostico/motor";
 import { formatRelative } from "@/lib/product-constants";
+import { channels } from "@/lib/realtime/types";
 import { Filtros } from "./filtros";
 import { FunilSelect } from "./funil-select";
 
@@ -33,6 +37,7 @@ export default async function DiagnosticosPage({
   }>;
 }) {
   const { uf, classe, status, score } = await searchParams;
+  const session = await auth.api.getSession({ headers: await headers() });
 
   const where = and(
     uf ? eq(schema.diagnostico.uf, uf.toUpperCase()) : undefined,
@@ -182,6 +187,10 @@ export default async function DiagnosticosPage({
           </div>
         )}
       </div>
+      <RealtimeRefresh
+        channel={channels.diagnosticos}
+        selfId={session?.user.id}
+      />
     </>
   );
 }

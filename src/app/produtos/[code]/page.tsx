@@ -1,7 +1,9 @@
 import { eq } from "drizzle-orm";
+import { headers } from "next/headers";
 import { notFound } from "next/navigation";
 import { db } from "@/db";
 import { access, document } from "@/db/schema";
+import { auth } from "@/lib/auth";
 import { formatStageDate, STAGES } from "@/lib/product-constants";
 import { ProductBoard } from "./product-board";
 
@@ -11,6 +13,7 @@ export default async function ProductPage({
   params: Promise<{ code: string }>;
 }) {
   const { code } = await params;
+  const session = await auth.api.getSession({ headers: await headers() });
   const row = await db.query.product.findFirst({
     where: (p, { eq }) => eq(p.code, code.toUpperCase()),
     with: {
@@ -35,6 +38,7 @@ export default async function ProductPage({
 
   return (
     <ProductBoard
+      currentUserId={session?.user.id ?? ""}
       accessCount={accessCount}
       documentCount={documentCount}
       product={{

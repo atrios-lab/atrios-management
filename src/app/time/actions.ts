@@ -10,6 +10,8 @@ import { db } from "@/db";
 import * as schema from "@/db/schema";
 import { auth, pendingInvite } from "@/lib/auth";
 import { sendEmail } from "@/lib/email";
+import { publish } from "@/lib/realtime/publish";
+import { channels } from "@/lib/realtime/types";
 
 const INVITE_TTL_MS = 7 * 24 * 60 * 60 * 1000; // 7 dias
 const INVITE_TTL_DAYS = Math.round(INVITE_TTL_MS / (24 * 60 * 60 * 1000));
@@ -27,6 +29,10 @@ async function requireAdmin() {
   const role = (session?.user as { role?: string } | undefined)?.role;
   if (!session || role !== "admin") return null;
   return session;
+}
+
+async function notifyTime(actorId?: string) {
+  await publish({ channel: channels.time, type: "changed", actorId });
 }
 
 async function adminCount() {
@@ -97,12 +103,13 @@ export async function inviteMember(
     inviterName: session.user.name ?? "Um administrador",
   });
   revalidatePath("/time");
+  await notifyTime(session.user.id);
   return {};
 }
 
 export async function resendInvite(inviteId: string): Promise<Result> {
-  if (!(await requireAdmin()))
-    return { error: "Apenas admins podem reenviar convites." };
+  const session = await requireAdmin();
+  if (!session) return { error: "Apenas admins podem reenviar convites." };
   const inv = await db.query.invite.findFirst({
     where: eq(schema.invite.id, inviteId),
     with: { invitedBy: true },
@@ -121,18 +128,20 @@ export async function resendInvite(inviteId: string): Promise<Result> {
     inviterName: inv.invitedBy?.name ?? "Um administrador",
   });
   revalidatePath("/time");
+  await notifyTime(session.user.id);
   return {};
 }
 
 export async function cancelInvite(inviteId: string): Promise<Result> {
-  if (!(await requireAdmin()))
-    return { error: "Apenas admins podem cancelar convites." };
+  const session = await requireAdmin();
+  if (!session) return { error: "Apenas admins podem cancelar convites." };
   await db
     .delete(schema.invite)
     .where(
       and(eq(schema.invite.id, inviteId), isNull(schema.invite.acceptedAt)),
     );
   revalidatePath("/time");
+  await notifyTime(session.user.id);
   return {};
 }
 
@@ -140,8 +149,8 @@ export async function changeRole(
   userId: string,
   role: "admin" | "member",
 ): Promise<Result> {
-  if (!(await requireAdmin()))
-    return { error: "Apenas admins podem mudar roles." };
+  const session = await requireAdmin();
+  if (!session) return { error: "Apenas admins podem mudar roles." };
   const target = await db.query.user.findFirst({
     where: eq(schema.user.id, userId),
   });
@@ -151,6 +160,7 @@ export async function changeRole(
 
   await db.update(schema.user).set({ role }).where(eq(schema.user.id, userId));
   revalidatePath("/time");
+  await notifyTime(session.user.id);
   return {};
 }
 
@@ -169,5 +179,6 @@ export async function removeMember(userId: string): Promise<Result> {
   // FK cascade apaga sessões e accounts junto.
   await db.delete(schema.user).where(eq(schema.user.id, userId));
   revalidatePath("/time");
+  await notifyTime(session.user.id);
   return {};
 }

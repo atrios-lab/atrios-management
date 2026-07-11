@@ -1,6 +1,8 @@
 "use client";
 
+import { useRouter } from "next/navigation";
 import {
+  useCallback,
   useEffect,
   useOptimistic,
   useRef,
@@ -20,6 +22,7 @@ import {
   PlusIcon,
   TrashIcon,
 } from "@/components/icons";
+import { RealtimeIndicator } from "@/components/realtime-indicator";
 import {
   Badge,
   Button,
@@ -37,6 +40,8 @@ import {
   repoColor,
   suggestBranch,
 } from "@/lib/product-constants";
+import { channels, type RealtimeEvent } from "@/lib/realtime/types";
+import { useRealtime } from "@/lib/realtime/use-realtime";
 import { useIsMobile } from "@/lib/use-is-mobile";
 import {
   archiveCard,
@@ -86,13 +91,16 @@ export function ProductBoard({
   cards,
   accessCount,
   documentCount,
+  currentUserId,
 }: {
   product: BoardProduct;
   cards: BoardCard[];
   accessCount: number;
   documentCount: number;
+  currentUserId: string;
 }) {
   const isMobile = useIsMobile();
+  const router = useRouter();
   const [view, setView] = useState("kanban");
   const [composing, setComposing] = useState(false);
   const [selectedId, setSelectedId] = useState<string | null>(null);
@@ -110,6 +118,44 @@ export function ProductBoard({
       state.map((c) => (c.id === id ? { ...c, status } : c)),
   );
 
+  // Realtime: eventos de outros usuários ressincronizam o board via refresh.
+  // Espelha o drag num ref para não recarregar no meio de uma interação; um
+  // refresh que chega durante o drag fica pendente e dispara ao soltar.
+  const draggingRef = useRef(false);
+  const pendingRefreshRef = useRef(false);
+  const refreshTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const resync = useCallback(() => {
+    if (draggingRef.current) {
+      pendingRefreshRef.current = true;
+      return;
+    }
+    if (refreshTimer.current) clearTimeout(refreshTimer.current);
+    refreshTimer.current = setTimeout(() => router.refresh(), 250);
+  }, [router]);
+
+  const onRealtimeEvent = useCallback(
+    (event: RealtimeEvent) => {
+      // ignora o eco da própria ação (o autor já teve o revalidatePath)
+      if (event.actorId === currentUserId) return;
+      resync();
+    },
+    [currentUserId, resync],
+  );
+
+  const realtimeStatus = useRealtime(
+    channels.product(product.id),
+    onRealtimeEvent,
+    resync,
+  );
+
+  useEffect(
+    () => () => {
+      if (refreshTimer.current) clearTimeout(refreshTimer.current);
+    },
+    [],
+  );
+
   const activeCards = optimisticCards.filter((c) => !c.archived);
   const archivedCards = optimisticCards.filter((c) => c.archived);
   const columns = BOARD_COLUMNS.map((col) => ({
@@ -121,8 +167,14 @@ export function ProductBoard({
   const nextSeq = cards.reduce((m, c) => Math.max(m, c.seq), 0) + 1;
 
   const endDrag = () => {
+    draggingRef.current = false;
     setDraggingId(null);
     setDragOverCol(null);
+    // Aplica um refresh que tenha chegado durante o drag.
+    if (pendingRefreshRef.current) {
+      pendingRefreshRef.current = false;
+      resync();
+    }
   };
 
   const dropOnColumn = (status: CardStatus, id: string) => {
@@ -282,6 +334,7 @@ export function ProductBoard({
                       draggable
                       onDragStart={(e) => {
                         // estado primeiro: é a fonte de verdade do drop (dataTransfer é só cosmético)
+                        draggingRef.current = true;
                         setDraggingId(card.id);
                         e.dataTransfer.effectAllowed = "move";
                         e.dataTransfer.setData("text/plain", card.id);
@@ -435,6 +488,8 @@ export function ProductBoard({
           onClose={() => setShowArchived(false)}
         />
       )}
+
+      <RealtimeIndicator status={realtimeStatus} />
     </>
   );
 }

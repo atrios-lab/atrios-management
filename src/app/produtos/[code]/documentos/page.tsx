@@ -1,8 +1,12 @@
 import { eq } from "drizzle-orm";
+import { headers } from "next/headers";
 import { notFound } from "next/navigation";
+import { RealtimeRefresh } from "@/components/realtime-refresh";
 import { db } from "@/db";
 import { access, card } from "@/db/schema";
+import { auth } from "@/lib/auth";
 import { formatStageDate, STAGES } from "@/lib/product-constants";
+import { channels } from "@/lib/realtime/types";
 import { ProductHeader } from "../product-header";
 import { DocumentsTab } from "./documents-tab";
 import { documentGroupsForProduct } from "./queries";
@@ -13,6 +17,7 @@ export default async function ProductDocumentsPage({
   params: Promise<{ code: string }>;
 }) {
   const { code } = await params;
+  const session = await auth.api.getSession({ headers: await headers() });
   const product = await db.query.product.findFirst({
     where: (p, { eq: eqp }) => eqp(p.code, code.toUpperCase()),
     with: {
@@ -67,6 +72,10 @@ export default async function ProductDocumentsPage({
         productCode={product.code}
         productName={product.name}
         groups={groups}
+      />
+      <RealtimeRefresh
+        channel={channels.documents(product.id)}
+        selfId={session?.user.id}
       />
     </>
   );

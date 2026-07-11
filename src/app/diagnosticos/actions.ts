@@ -19,6 +19,8 @@ import {
   UFS,
 } from "@/lib/diagnostico/constants";
 import { calcularScores, etapasDoEscopo } from "@/lib/diagnostico/motor";
+import { publish } from "@/lib/realtime/publish";
+import { channels } from "@/lib/realtime/types";
 
 type Result = { error?: string };
 
@@ -43,6 +45,15 @@ const ITENS_IDENTIDADE: IdentidadeItem[] = ["site", "email", "fone"];
 /** Toda mutation exige sessão — qualquer membro conduz diagnósticos. */
 async function requireSession() {
   return auth.api.getSession({ headers: await headers() });
+}
+
+async function notifyDiagnosticos(actorId?: string, id?: string) {
+  await publish({
+    channel: channels.diagnosticos,
+    type: "changed",
+    actorId,
+    id,
+  });
 }
 
 /* ---- Cadastro ------------------------------------------------------------ */
@@ -101,6 +112,7 @@ export async function createDiagnostico(input: {
     })
     .returning();
   revalidatePath("/diagnosticos");
+  await notifyDiagnosticos(session.user.id, row.id);
   return { id: row.id };
 }
 
@@ -111,7 +123,8 @@ export async function salvarRespostas(
   respostas: { requisitoId: string; valor: RespostaValor }[],
   identidade: { item: IdentidadeItem; valor: RespostaValor }[],
 ): Promise<Result> {
-  if (!(await requireSession())) return { error: "Sessão expirada." };
+  const session = await requireSession();
+  if (!session) return { error: "Sessão expirada." };
 
   const diag = await db.query.diagnostico.findFirst({
     where: eq(schema.diagnostico.id, diagnosticoId),
@@ -156,13 +169,15 @@ export async function salvarRespostas(
   });
   revalidatePath(`/diagnosticos/${diagnosticoId}`);
   revalidatePath("/diagnosticos");
+  await notifyDiagnosticos(session.user.id, diagnosticoId);
   return {};
 }
 
 export async function concluirDiagnostico(
   diagnosticoId: string,
 ): Promise<Result> {
-  if (!(await requireSession())) return { error: "Sessão expirada." };
+  const session = await requireSession();
+  if (!session) return { error: "Sessão expirada." };
 
   const diag = await db.query.diagnostico.findFirst({
     where: eq(schema.diagnostico.id, diagnosticoId),
@@ -209,13 +224,15 @@ export async function concluirDiagnostico(
     .where(eq(schema.diagnostico.id, diagnosticoId));
   revalidatePath(`/diagnosticos/${diagnosticoId}`);
   revalidatePath("/diagnosticos");
+  await notifyDiagnosticos(session.user.id, diagnosticoId);
   return {};
 }
 
 export async function reabrirDiagnostico(
   diagnosticoId: string,
 ): Promise<Result> {
-  if (!(await requireSession())) return { error: "Sessão expirada." };
+  const session = await requireSession();
+  if (!session) return { error: "Sessão expirada." };
   const [updated] = await db
     .update(schema.diagnostico)
     .set({ statusFunil: "em_andamento", scoreGeral: null })
@@ -224,6 +241,7 @@ export async function reabrirDiagnostico(
   if (!updated) return { error: "Diagnóstico não encontrado." };
   revalidatePath(`/diagnosticos/${diagnosticoId}`);
   revalidatePath("/diagnosticos");
+  await notifyDiagnosticos(session.user.id, diagnosticoId);
   return {};
 }
 
@@ -233,7 +251,8 @@ export async function setStatusFunil(
   diagnosticoId: string,
   status: DiagnosticoStatusFunil,
 ): Promise<Result> {
-  if (!(await requireSession())) return { error: "Sessão expirada." };
+  const session = await requireSession();
+  if (!session) return { error: "Sessão expirada." };
   if (!STATUS_FUNIL.includes(status) || status === "em_andamento")
     return { error: "Status inválido — use “Reabrir” para voltar a editar." };
   const diag = await db.query.diagnostico.findFirst({
@@ -249,18 +268,21 @@ export async function setStatusFunil(
     .where(eq(schema.diagnostico.id, diagnosticoId));
   revalidatePath(`/diagnosticos/${diagnosticoId}`);
   revalidatePath("/diagnosticos");
+  await notifyDiagnosticos(session.user.id, diagnosticoId);
   return {};
 }
 
 export async function deleteDiagnostico(
   diagnosticoId: string,
 ): Promise<Result> {
-  if (!(await requireSession())) return { error: "Sessão expirada." };
+  const session = await requireSession();
+  if (!session) return { error: "Sessão expirada." };
   const [deleted] = await db
     .delete(schema.diagnostico)
     .where(eq(schema.diagnostico.id, diagnosticoId))
     .returning();
   if (!deleted) return { error: "Diagnóstico não encontrado." };
   revalidatePath("/diagnosticos");
+  await notifyDiagnosticos(session.user.id, diagnosticoId);
   return {};
 }

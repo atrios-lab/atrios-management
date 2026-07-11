@@ -7,6 +7,8 @@ import { db } from "@/db";
 import type { AccessAmbiente, AccessTipo } from "@/db/schema";
 import * as schema from "@/db/schema";
 import { auth } from "@/lib/auth";
+import { publish } from "@/lib/realtime/publish";
+import { channels } from "@/lib/realtime/types";
 import { ACCESS_AMBIENTES, ACCESS_TIPOS } from "@/lib/vault-constants";
 import { decryptSecret, encryptSecret } from "@/lib/vault-crypto";
 
@@ -77,6 +79,12 @@ export async function createAccess(input: AccessInput): Promise<Result> {
     action: "created",
   });
   revalidatePath("/", "layout");
+  await publish({
+    channel: channels.cofre,
+    type: "changed",
+    actorId: session.user.id,
+    id: row.id,
+  });
   return {};
 }
 
@@ -120,6 +128,12 @@ export async function updateAccess(
     });
   }
   revalidatePath("/", "layout");
+  await publish({
+    channel: channels.cofre,
+    type: "changed",
+    actorId: session.user.id,
+    id: accessId,
+  });
   return {};
 }
 
