@@ -437,7 +437,7 @@ const PARAMETROS: SeedParametro[] = [
   // prorrogações estaduais do art. 21 (uma única, até 90 dias)
   {
     chave: "prorrogacao_art20_dias",
-    valor: "90",
+    valor: "93",
     uf: "RN",
     descricao:
       "Decisão CGJ-RN de 02/07/2026, PP 0000897-12.2026.2.00.0820, a pedido da Anoreg/RN — única prorrogação admitida pelo art. 21, condicionada a medidas mitigatórias e acompanhamento pela Seção de Correição.",

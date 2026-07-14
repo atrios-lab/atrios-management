@@ -1,7 +1,11 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { db } from "@/db";
-import { calcularPrazos, parametrosParaClasse } from "@/lib/diagnostico/motor";
+import {
+  calcularPrazos,
+  type ParametrosPrazo,
+  parametrosParaClasse,
+} from "@/lib/diagnostico/motor";
 import { LandingForm } from "./landing-form";
 
 // Landing pública — servida fora da autenticação (ver src/proxy.ts). O envio do
@@ -36,37 +40,59 @@ export const dynamic = "force-dynamic";
 // hardcode). Default false.
 const SHOW_PARTNERS = process.env.LANDING_SHOW_PARTNERS === "true";
 
-// Datas-limite das Etapas 1 e 2 no RN (art. 20 + prorrogação CGJ-RN). Fonte de
-// verdade: parametro_norma (via motor). O mapa abaixo é só rede de segurança
-// caso o seed do módulo ainda não tenha rodado.
-const LIMITES_FALLBACK: Record<number, string> = {
-  3: "2026-08-19",
-  2: "2026-10-18",
-  1: "2026-12-17",
-};
+export interface PrazoClasse {
+  dias: number;
+  /** dd/mm/aaaa — sempre derivado do mesmo cálculo que `dias` (nunca hardcode). */
+  data: string;
+}
 
-async function calcularDias(): Promise<Record<number, number>> {
+export interface PrazoRN {
+  porClasse: Record<number, PrazoClasse>;
+  /** dias da prorrogação estadual (art. 21) — mesmo texto exibido na landing. */
+  prorrogacaoDias: number;
+}
+
+const fmtData = (d: Date) => d.toLocaleDateString("pt-BR");
+
+// Rede de segurança só para o caso do seed do módulo ainda não ter rodado —
+// espelha os parâmetros de src/db/seed-provimento.ts (vigência + prorrogação
+// RN). Se a norma mudar, o ajuste é nos parâmetros, não aqui.
+const FALLBACK: ParametrosPrazo = {
+  vigencia: new Date("2026-02-20T12:00:00"),
+  prazoArt20Dias: 0, // sobrescrito por classe abaixo
+  prazoArt23Meses: 0,
+  prorrogacaoDias: 93,
+};
+const FALLBACK_ART20_DIAS: Record<number, number> = { 3: 90, 2: 150, 1: 210 };
+
+async function calcularPrazoRN(): Promise<PrazoRN> {
   const hoje = new Date();
   const piso = (n: number) => Math.max(0, n);
-  try {
-    const rows = await db.query.parametroNorma.findMany();
-    const dias = (classe: number) =>
-      piso(
-        calcularPrazos(parametrosParaClasse(rows, classe, "RN"), hoje)
-          .diasRestantesInicial,
-      );
-    return { 3: dias(3), 2: dias(2), 1: dias(1) };
-  } catch {
-    const dias = (classe: number) =>
-      piso(
-        Math.ceil(
-          (new Date(`${LIMITES_FALLBACK[classe]}T12:00:00`).getTime() -
-            hoje.getTime()) /
-            864e5,
-        ),
-      );
-    return { 3: dias(3), 2: dias(2), 1: dias(1) };
+
+  const rows = await db.query.parametroNorma.findMany().catch(() => []);
+
+  // Se o seed do módulo não rodou (ou o banco falhou), parametrosParaClasse
+  // lança — cada classe cai isoladamente no fallback local.
+  const paraClasse = (classe: number): ParametrosPrazo => {
+    try {
+      return parametrosParaClasse(rows, classe, "RN");
+    } catch {
+      return { ...FALLBACK, prazoArt20Dias: FALLBACK_ART20_DIAS[classe] };
+    }
+  };
+
+  const porClasse: Record<number, PrazoClasse> = {};
+  let prorrogacaoDias = FALLBACK.prorrogacaoDias;
+  for (const classe of [3, 2, 1]) {
+    const params = paraClasse(classe);
+    const prazos = calcularPrazos(params, hoje);
+    porClasse[classe] = {
+      dias: piso(prazos.diasRestantesInicial),
+      data: fmtData(prazos.limiteInicial),
+    };
+    prorrogacaoDias = params.prorrogacaoDias;
   }
+  return { porClasse, prorrogacaoDias };
 }
 
 const PASSOS = [
@@ -151,12 +177,7 @@ function Topo() {
   );
 }
 
-function Urgencia({ dias }: { dias: Record<number, number> }) {
-  const itens = [
-    { classe: 3, data: "19/08/2026" },
-    { classe: 2, data: "18/10/2026" },
-    { classe: 1, data: "17/12/2026" },
-  ];
+function Urgencia({ prazo }: { prazo: PrazoRN }) {
   return (
     <div className="flex max-w-[560px] flex-col gap-3 rounded-[12px] border border-[rgba(224,108,108,0.22)] bg-[rgba(224,108,108,0.06)] p-4">
       <div className="flex flex-col gap-0.5">
@@ -164,22 +185,25 @@ function Urgencia({ dias }: { dias: Record<number, number> }) {
           Prazo das Etapas 1 e 2 no RN
         </span>
         <span className="text-xs leading-[1.45] text-fg-5">
-          Já com a prorrogação de 90 dias concedida pela Corregedoria (CGJ-RN)
+          Já com a prorrogação de {prazo.prorrogacaoDias} dias concedida pela
+          Corregedoria (CGJ-RN)
         </span>
       </div>
       <div className="grid grid-cols-3 gap-3">
-        {itens.map(({ classe, data }) => (
+        {[3, 2, 1].map((classe) => (
           <div key={classe} className="flex flex-col">
             <span className="text-[11.5px] font-medium text-fg-5">
               Classe {classe}
             </span>
             <span className="text-[25px] font-bold leading-[1.15] tracking-[-0.02em] text-danger md:text-[27px]">
-              {dias[classe]}
+              {prazo.porClasse[classe].dias}
               <span className="ml-1 text-xs font-medium text-[#c98686]">
                 dias
               </span>
             </span>
-            <span className="text-[10.5px] text-[#6b6f7a]">até {data}</span>
+            <span className="text-[10.5px] text-[#6b6f7a]">
+              até {prazo.porClasse[classe].data}
+            </span>
           </div>
         ))}
       </div>
@@ -258,7 +282,7 @@ function Rodape() {
 }
 
 export default async function DiagnosticoLandingPage() {
-  const dias = await calcularDias();
+  const prazo = await calcularPrazoRN();
 
   return (
     <main
@@ -286,7 +310,7 @@ export default async function DiagnosticoLandingPage() {
               cumpre e o que ainda falta, com relatório por escrito.
             </p>
           </div>
-          <Urgencia dias={dias} />
+          <Urgencia prazo={prazo} />
         </div>
 
         <div className="lg:col-start-2 lg:row-span-2 lg:row-start-1 lg:self-center">
