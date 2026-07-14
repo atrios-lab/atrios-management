@@ -1,4 +1,4 @@
-import { and, desc, eq, gte, isNotNull, lt } from "drizzle-orm";
+import { and, count, desc, eq, gte, isNotNull, lt, ne } from "drizzle-orm";
 import { headers } from "next/headers";
 import Link from "next/link";
 import { RealtimeRefresh } from "@/components/realtime-refresh";
@@ -39,7 +39,9 @@ export default async function DiagnosticosPage({
   const { uf, classe, status, score } = await searchParams;
   const session = await auth.api.getSession({ headers: await headers() });
 
+  // Leads do pré-cadastro (status "novo") têm tela própria — ver /diagnosticos/leads.
   const where = and(
+    ne(schema.diagnostico.statusFunil, "novo"),
     uf ? eq(schema.diagnostico.uf, uf.toUpperCase()) : undefined,
     classe ? eq(schema.diagnostico.classe, Number(classe)) : undefined,
     status
@@ -60,11 +62,17 @@ export default async function DiagnosticosPage({
       : undefined,
   );
 
-  const diagnosticos = await db.query.diagnostico.findMany({
-    where,
-    orderBy: desc(schema.diagnostico.updatedAt),
-    with: { criadoPor: { columns: { name: true } } },
-  });
+  const [diagnosticos, [{ leadsPendentes }]] = await Promise.all([
+    db.query.diagnostico.findMany({
+      where,
+      orderBy: desc(schema.diagnostico.updatedAt),
+      with: { criadoPor: { columns: { name: true } } },
+    }),
+    db
+      .select({ leadsPendentes: count() })
+      .from(schema.diagnostico)
+      .where(eq(schema.diagnostico.statusFunil, "novo")),
+  ]);
 
   const temFiltro = Boolean(uf || classe || status || score);
 
@@ -75,6 +83,16 @@ export default async function DiagnosticosPage({
         <span className="text-xs text-fg-8">{diagnosticos.length}</span>
         <span className="text-xs text-fg-9">Provimento CNJ 213/2026</span>
         <div className="ml-auto" />
+        <Link href="/diagnosticos/leads">
+          <Button variant="secondary">
+            Leads
+            {leadsPendentes > 0 && (
+              <span className="ml-1.5 inline-flex h-4 min-w-4 items-center justify-center rounded-pill bg-primary px-1 text-[10.5px] font-semibold text-white">
+                {leadsPendentes}
+              </span>
+            )}
+          </Button>
+        </Link>
         <Link href="/diagnosticos/novo">
           <Button>Novo diagnóstico</Button>
         </Link>
@@ -164,19 +182,10 @@ export default async function DiagnosticosPage({
                         )}
                       </td>
                       <td className="px-3 py-2.5">
-                        {d.statusFunil === "em_andamento" ||
-                        d.statusFunil === "novo" ? (
+                        {d.statusFunil === "em_andamento" ? (
                           <span className="inline-flex items-center gap-1.5 text-[12px] text-fg-6">
-                            <span
-                              className="size-1.5 rounded-full"
-                              style={{
-                                background:
-                                  d.statusFunil === "novo"
-                                    ? "#8b93ec"
-                                    : "#8a8f98",
-                              }}
-                            />
-                            {STATUS_FUNIL_LABEL[d.statusFunil]}
+                            <span className="size-1.5 rounded-full bg-[#8a8f98]" />
+                            {STATUS_FUNIL_LABEL.em_andamento}
                           </span>
                         ) : (
                           <FunilSelect

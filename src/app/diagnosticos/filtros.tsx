@@ -59,7 +59,7 @@ export function Filtros() {
         onChange={(e) => set("status", e.target.value)}
       >
         <option value="">Funil — todos</option>
-        {STATUS_FUNIL.map((s) => (
+        {STATUS_FUNIL.filter((s) => s.value !== "novo").map((s) => (
           <option key={s.value} value={s.value}>
             {s.label}
           </option>
