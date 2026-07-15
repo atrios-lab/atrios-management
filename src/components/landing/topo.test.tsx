@@ -19,8 +19,8 @@ describe("Topo — logos de parceria", () => {
     expect(html).not.toContain("arpen-rn.png");
     expect(html).not.toContain("anoreg-rn.png");
     expect(html).not.toContain("Realização / apoio");
-    // a logo da própria Átrios continua lá
-    expect(html).toContain("atrios-logo.png");
+    // a logo da própria Átrios continua lá (lockup inline, via aria-label)
+    expect(html).toContain("Átrios Tecnologia e Consultoria");
   });
 
   it("não renderiza com a flag explicitamente 'false'", () => {

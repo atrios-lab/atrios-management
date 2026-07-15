@@ -1,19 +1,16 @@
 import Link from "next/link";
 import { cn } from "@/lib/cn";
 import { showPartners } from "@/lib/landing/config";
+import { LogoAtriosLockup } from "./logo-atrios-lockup";
 
 // Topo compartilhado das páginas públicas (`/` e `/diagnostico`): logo Átrios
 // + logos de parceria sob a mesma flag (ver lib/landing/config).
 
 function LogoAtrios() {
+  // O lockup traz a cor por currentColor, então dispensa o PNG escuro com
+  // filter:invert(1) que existia aqui, e não perde nitidez ao escalar.
   return (
-    // logo original é escura; renderizada em branco sobre fundo dark
-    // biome-ignore lint/performance/noImgElement: asset local, filtro invert
-    <img
-      src="/landing/atrios-logo.png"
-      alt="Átrios — Tecnologia e Consultoria"
-      className="h-[46px] w-auto opacity-95 [filter:invert(1)] md:h-[54px]"
-    />
+    <LogoAtriosLockup className="h-[30px] w-auto text-white md:h-[34px]" />
   );
 }
 

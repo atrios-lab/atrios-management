@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Image from "next/image";
 import Link from "next/link";
+import { LogoAtriosLockup } from "@/components/landing/logo-atrios-lockup";
 import {
   CONTATO_EMAIL,
   showPartners,
@@ -218,14 +219,7 @@ function Topo() {
     <header className="sticky top-0 z-50 border-b border-line bg-surface-0/70 backdrop-blur-[14px]">
       <nav className={`${wrap} flex items-center justify-between gap-3 py-3.5`}>
         <Link href="#topo" aria-label="Átrios, início">
-          <Image
-            src="/landing/atrios-logo-white.png"
-            alt="Átrios Tecnologia e Consultoria"
-            width={104}
-            height={30}
-            priority
-            className="h-[30px] w-auto"
-          />
+          <LogoAtriosLockup className="h-[26px] w-auto text-white" />
         </Link>
         <div className="hidden items-center gap-6 md:flex">
           {NAV.map((n) => (
@@ -1090,13 +1084,7 @@ function Rodape() {
       <div className={`${wrap} flex flex-col gap-8 py-12`}>
         <div className="grid gap-8 md:grid-cols-[minmax(0,1.6fr)_1fr_1fr]">
           <div className="flex flex-col gap-3">
-            <Image
-              src="/landing/atrios-logo-white.png"
-              alt="Átrios Tecnologia e Consultoria"
-              width={104}
-              height={30}
-              className="h-[30px] w-auto"
-            />
+            <LogoAtriosLockup className="h-[26px] w-auto text-white" />
             <p className="max-w-[420px] text-[13px] leading-[1.6] text-fg-6">
               Software sob medida, segurança da informação e LGPD, e a vertical
               de cartórios (Provimento CNJ 213/2026). A mesma competência que
