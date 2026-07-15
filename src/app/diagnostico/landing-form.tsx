@@ -324,10 +324,10 @@ export function LandingForm() {
               htmlFor={id("consentimento")}
               className="cursor-pointer text-xs leading-[1.55] text-fg-6 md:text-[11.5px]"
             >
-              Autorizo a Átrios a tratar meus dados de contato (nome, cargo,
-              e-mail e WhatsApp) com a finalidade exclusiva de falar comigo
-              sobre o diagnóstico gratuito e a adequação ao Provimento CNJ
-              213/2026. Posso revogar este consentimento a qualquer momento em{" "}
+              Autorizo a Átrios a tratar meus dados de contato com a finalidade
+              exclusiva de falar comigo sobre o diagnóstico gratuito e a
+              adequação à Lei Geral de Proteção de Dados (LGPD). Posso revogar
+              este consentimento a qualquer momento em{" "}
               <a
                 href="mailto:contato@atrioss.com"
                 className="text-primary-ink no-underline hover:text-primary-fg"
