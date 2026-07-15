@@ -23,10 +23,20 @@ export function whatsappUrl(texto?: string): string {
 
 /**
  * Origem pública do site — base das URLs absolutas de metadata (OG/Twitter),
- * do sitemap e do robots. Em preview da Vercel, VERCEL_URL aponta pro deploy.
+ * do sitemap e do robots.
+ *
+ * `www`, não o apex: o apex responde 308 pro www, então uma og:image no apex
+ * custaria um salto a mais e o canonical divergiria do endereço real.
+ *
+ * VERCEL_URL só entra no preview. Ela existe em produção também, apontando pra
+ * URL do *deployment* — que fica atrás da proteção de acesso e responde 302 pra
+ * quem não está logado. Usá-la aqui fazia o crawler do WhatsApp buscar a
+ * og:image nesse endereço, tomar 302 e montar o card sem imagem.
  */
 export function siteUrl(): string {
   if (process.env.NEXT_PUBLIC_SITE_URL) return process.env.NEXT_PUBLIC_SITE_URL;
-  if (process.env.VERCEL_URL) return `https://${process.env.VERCEL_URL}`;
-  return "https://atrioss.com";
+  if (process.env.VERCEL_ENV === "preview" && process.env.VERCEL_URL) {
+    return `https://${process.env.VERCEL_URL}`;
+  }
+  return "https://www.atrioss.com";
 }

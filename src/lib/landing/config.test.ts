@@ -1,7 +1,7 @@
 import { readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { afterEach, describe, expect, it } from "vitest";
-import { showPartners } from "./config";
+import { showPartners, siteUrl } from "./config";
 
 const src = (rel: string) =>
   readFileSync(fileURLToPath(new URL(`../../${rel}`, import.meta.url)), "utf8");
@@ -11,6 +11,32 @@ const PAGINAS = ["app/site/page.tsx", "app/diagnostico/page.tsx"];
 
 afterEach(() => {
   delete process.env.LANDING_SHOW_PARTNERS;
+  delete process.env.NEXT_PUBLIC_SITE_URL;
+  delete process.env.VERCEL_ENV;
+  delete process.env.VERCEL_URL;
+});
+
+describe("siteUrl", () => {
+  it("usa o www em produção — nunca a URL do deployment", () => {
+    // VERCEL_URL existe em produção e aponta pro deployment, que fica atrás da
+    // proteção de acesso: og:image de lá dá 302 e o card sai sem imagem.
+    process.env.VERCEL_ENV = "production";
+    process.env.VERCEL_URL = "atrios-management-abc123.vercel.app";
+    expect(siteUrl()).toBe("https://www.atrioss.com");
+  });
+
+  it("usa o deployment no preview, que não tem domínio próprio", () => {
+    process.env.VERCEL_ENV = "preview";
+    process.env.VERCEL_URL = "atrios-management-abc123.vercel.app";
+    expect(siteUrl()).toBe("https://atrios-management-abc123.vercel.app");
+  });
+
+  it("deixa NEXT_PUBLIC_SITE_URL mandar em qualquer ambiente", () => {
+    process.env.NEXT_PUBLIC_SITE_URL = "https://staging.atrioss.com";
+    process.env.VERCEL_ENV = "preview";
+    process.env.VERCEL_URL = "atrios-management-abc123.vercel.app";
+    expect(siteUrl()).toBe("https://staging.atrioss.com");
+  });
 });
 
 describe("showPartners", () => {
