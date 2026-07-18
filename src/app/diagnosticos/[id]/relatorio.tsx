@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { ArrowLeftIcon } from "@/components/icons";
+import { Button } from "@/components/ui";
 import {
   ESCOPO_LABEL,
   ETAPAS,
@@ -248,6 +249,37 @@ export function RelatorioView({ relatorio }: { relatorio: Relatorio }) {
               </div>
             </section>
           )}
+
+          {/* Relatório interno: card próprio, visual de alerta, longe do botão
+              "PDF do cliente" do header — um clique errado aqui entrega o
+              produto de graça. */}
+          <section
+            className="rounded-panel border p-[18px]"
+            style={{
+              borderColor: "#eb575766",
+              background: "#eb575710",
+              borderLeftWidth: 4,
+            }}
+          >
+            <h2 className="text-[13.5px] font-semibold text-fg-1">
+              Relatório interno: roteiro de execução
+            </h2>
+            <p className="mt-1 text-[12px] leading-relaxed text-fg-5">
+              Contém o como fazer, esforço estimado e CAPEX.{" "}
+              <b style={{ color: "#eb5757" }}>
+                Uso interno Átrios. Não enviar ao cliente.
+              </b>{" "}
+              O arquivo sai com marca d&apos;água e nome iniciado por INTERNO-;
+              toda geração fica registrada em log.
+            </p>
+            <a
+              className="mt-3 inline-block"
+              href={`/diagnosticos/${d.id}/pdf/interno`}
+              download
+            >
+              <Button variant="secondary">Baixar PDF interno</Button>
+            </a>
+          </section>
 
           <p className="text-center text-[11px] leading-relaxed text-fg-8">
             Uso interno · Diagnóstico baseado em informações declaradas na

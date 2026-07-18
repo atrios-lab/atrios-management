@@ -504,6 +504,15 @@ export type RequisitoCondicoes = {
   nota?: string;
 };
 
+/** Natureza do trabalho de adequação: quem faz e como custa (relatório interno). */
+export type RequisitoNatureza =
+  | "documento" // Átrios produz (PSI, ROPA, PCN, designações…)
+  | "configuracao" // Átrios executa (MFA, criptografia, backup…)
+  | "capex" // o cartório compra (no-break, storage, firewall, licença)
+  | "recorrente" // vira anuidade (testes, simulações, capacitação)
+  | "terceiro" // subcontratado (pentest, laudo de aterramento)
+  | "ato_titular"; // custo zero (declarar a etapa no Justiça Aberta)
+
 // Requisitos do Anexo IV em banco, não em código — texto, peso e classes
 // editáveis sem deploy. Seed: src/db/seed-provimento.ts (upsert por id).
 export const requisito = pgTable(
@@ -521,6 +530,36 @@ export const requisito = pgTable(
     condicoes: jsonb("condicoes").$type<RequisitoCondicoes>(),
     ordem: integer("ordem").notNull(),
     ativo: boolean("ativo").default(true).notNull(),
+    // Apontamento do relatório do CLIENTE (4 partes: o quê + dispositivo na
+    // exigência; a situação vem da resposta; a consequência é conferível na
+    // norma). Pergunta e apontamento são coisas diferentes: a pergunta é
+    // ferramenta de entrevista e NUNCA aparece no relatório do cliente.
+    apontamentoTitulo: text("apontamento_titulo"),
+    apontamentoExigencia: text("apontamento_exigencia"),
+    apontamentoConsequencia: text("apontamento_consequencia"),
+    // Roteiro de execução: o "como fazer". SÓ no relatório INTERNO — é o
+    // produto da Átrios e jamais sai no PDF do cliente (teste automatizado
+    // em relatorio-doc.test.ts protege isto).
+    roteiroExecucao: text("roteiro_execucao"),
+    // O que existe ao final (ex.: "PSI assinada e divulgada").
+    artefato: text("artefato"),
+    natureza: text("natureza").$type<RequisitoNatureza>(),
+    // horas para criar o artefato reutilizável (uma vez)
+    esforcoTemplateHoras: numeric("esforco_template_horas", {
+      precision: 5,
+      scale: 1,
+    }),
+    // horas para adaptar/executar por serventia
+    esforcoServentiaHoras: numeric("esforco_serventia_horas", {
+      precision: 5,
+      scale: 1,
+    }),
+    exigeCapex: boolean("exige_capex").default(false).notNull(),
+    // item que o cartório compra (repasse, fora do preço do serviço)
+    capexDescricao: text("capex_descricao"),
+    // O texto (apontamento + roteiro) foi revisado por gente? O seed entra
+    // como esqueleto (false); o PDF interno marca o que está pendente.
+    revisado: boolean("revisado").default(false).notNull(),
   },
   (table) => [index("requisito_etapa_idx").on(table.etapa)],
 );
@@ -730,6 +769,46 @@ export const respostaIdentidadeRelations = relations(
 export const requisitoRelations = relations(requisito, ({ many }) => ({
   respostas: many(resposta),
 }));
+
+/* ---- Log de geração dos relatórios (PDF) --------------------------------- */
+
+export type RelatorioTipo = "cliente" | "interno";
+
+// Quem gerou qual PDF e quando. Exigência de segurança do relatório interno
+// (o documento que não pode vazar): toda geração fica registrada.
+export const relatorioEvento = pgTable(
+  "relatorio_evento",
+  {
+    id: text("id")
+      .primaryKey()
+      .$defaultFn(() => crypto.randomUUID()),
+    diagnosticoId: text("diagnostico_id")
+      .notNull()
+      .references(() => diagnostico.id, { onDelete: "cascade" }),
+    userId: text("user_id").references(() => user.id, {
+      onDelete: "set null",
+    }),
+    tipo: text("tipo").$type<RelatorioTipo>().notNull(),
+    createdAt: timestamp("created_at").defaultNow().notNull(),
+  },
+  (table) => [
+    index("relatorio_evento_diagnosticoId_idx").on(table.diagnosticoId),
+  ],
+);
+
+export const relatorioEventoRelations = relations(
+  relatorioEvento,
+  ({ one }) => ({
+    diagnostico: one(diagnostico, {
+      fields: [relatorioEvento.diagnosticoId],
+      references: [diagnostico.id],
+    }),
+    user: one(user, {
+      fields: [relatorioEvento.userId],
+      references: [user.id],
+    }),
+  }),
+);
 
 /* ---- Pré-cadastro público (landing /diagnostico) ------------------------ */
 

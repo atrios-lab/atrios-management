@@ -47,8 +47,10 @@ export function RelatorioAcoes({
       <Button variant="secondary" onClick={reabrir} disabled={pending}>
         Reabrir
       </Button>
-      <a href={`/diagnosticos/${diagnosticoId}/pdf`} download>
-        <Button disabled={pending}>Baixar PDF</Button>
+      {/* Só o PDF do CLIENTE fica aqui. O interno tem seu próprio card no fim
+          da página — botões separados e distantes, nunca um dropdown. */}
+      <a href={`/diagnosticos/${diagnosticoId}/pdf/cliente`} download>
+        <Button disabled={pending}>PDF do cliente</Button>
       </a>
     </div>
   );

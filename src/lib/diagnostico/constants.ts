@@ -8,6 +8,7 @@ import type {
   DiagnosticoModelo,
   DiagnosticoStatusFunil,
   IdentidadeItem,
+  RequisitoNatureza,
   RespostaValor,
 } from "@/db/schema";
 import type { StatusEtapa } from "./motor";
@@ -34,6 +35,43 @@ export const VALORES: { value: RespostaValor; label: string }[] = [
   { value: "nao", label: "Não" },
   { value: "nao_sei", label: "Não sei" },
 ];
+
+// Títulos de etapa para os PDFs: mesmos nomes, sem travessão (a regra dos
+// dois relatórios proíbe travessão/meia-risca em texto visível).
+export const ETAPAS_DOC: Record<number, string> = {
+  1: "Etapa 1: Organização e proteção de dados (LGPD)",
+  2: "Etapa 2: Estrutura e funcionamento",
+  3: "Etapa 3: Proteção dos dados e cópias de segurança",
+  4: "Etapa 4: Testes e acompanhamento",
+  5: "Etapa 5: Integração e manutenção contínua",
+};
+
+/**
+ * Parte 3 do apontamento do cliente. "Não sei" NUNCA vira conformidade:
+ * entra como pendência a confirmar.
+ */
+export const SITUACAO_APONTAMENTO: Record<
+  Exclude<RespostaValor, "sim">,
+  string
+> = {
+  parcial: "existe parcialmente",
+  nao: "não existe",
+  nao_sei: "não soube informar, a confirmar",
+};
+
+/** Ressalva do art. 16 §1º — acompanha TODA menção a classe, nos dois PDFs. */
+export const RESSALVA_CLASSE =
+  "Classe e subclasse indicadas são estimativas: o enquadramento oficial é o declarado pela própria serventia, nos termos do art. 16, §1º.";
+
+/** Natureza do trabalho (relatório interno): quem faz e como custa. */
+export const NATUREZA_LABEL: Record<RequisitoNatureza, string> = {
+  documento: "Documento (Átrios produz)",
+  configuracao: "Configuração (Átrios executa)",
+  capex: "Aquisição do cartório (repasse)",
+  recorrente: "Recorrente (vira anuidade)",
+  terceiro: "Terceiro subcontratado",
+  ato_titular: "Ato do titular (custo zero)",
+};
 
 /** Rótulo de situação do gap no relatório (texto do protótipo). */
 export const SITUACAO_GAP: Record<RespostaValor, string> = {

@@ -64,6 +64,13 @@
       "when": 1784108981199,
       "tag": "0008_consentimento_lgpd",
       "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "7",
+      "when": 1784332324776,
+      "tag": "0009_relatorios_cliente_interno",
+      "breakpoints": true
     }
   ]
 }
