@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   formatMoney,
   formatMoneyComSinal,
+  formatMoneySaldo,
   hojeISO,
   intervaloDoMes,
   isMes,
@@ -27,6 +28,12 @@ describe("dinheiro", () => {
   it("prefixa o sinal pelo valor, não pelo módulo", () => {
     expect(formatMoneyComSinal(1_850_000)).toBe("+R$ 18.500,00");
     expect(formatMoneyComSinal(-432_000)).toBe("−R$ 4.320,00");
+  });
+
+  it("mostra o saldo negativo como negativo (sem '+' quando positivo)", () => {
+    expect(formatMoneySaldo(-299_676)).toBe("−R$ 2.996,76");
+    expect(formatMoneySaldo(299_676)).toBe("R$ 2.996,76");
+    expect(formatMoneySaldo(0)).toBe("R$ 0,00");
   });
 
   it("lê o campo mascarado de volta em centavos", () => {

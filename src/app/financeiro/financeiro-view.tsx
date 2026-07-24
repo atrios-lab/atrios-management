@@ -27,6 +27,7 @@ import {
   corDoTipo,
   formatMoney,
   formatMoneyComSinal,
+  formatMoneySaldo,
   hojeISO,
   labelDataCompleta,
   labelDia,
@@ -206,8 +207,9 @@ export function FinanceiroView({
           />
           <ResumoCard
             label="Saldo em caixa"
-            valor={formatMoney(resumo.saldo, prefs)}
-            cor="#f0f0f2"
+            valor={formatMoneySaldo(resumo.saldo, prefs)}
+            // Caixa no vermelho não pode sair da cor neutra do card.
+            cor={resumo.saldo < 0 ? "#e06c6c" : "#f0f0f2"}
             destaque
           />
         </div>

@@ -84,6 +84,18 @@ export function formatMoneyComSinal(
 }
 
 /**
+ * Saldo é estoque, não fluxo: leva "−" quando o caixa está negativo, mas não
+ * ganha "+" quando está positivo (formatMoney sozinho esconderia o vermelho).
+ */
+export function formatMoneySaldo(
+  centavos: number,
+  prefs: MoneyPrefs = MONEY_PREFS_PADRAO,
+): string {
+  if (prefs.ocultarValores) return VALOR_OCULTO;
+  return (centavos < 0 ? "−" : "") + formatMoney(centavos, prefs);
+}
+
+/**
  * "4.320,00" / "4320" / "R$ 1.234" → centavos. Só os dígitos importam: o campo
  * é mascarado enquanto se digita, então a última "vírgula" é sempre posicional.
  */
