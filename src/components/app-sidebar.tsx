@@ -4,6 +4,7 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import {
   ArchLogo,
+  CashFlowIcon,
   ClipboardCheckIcon,
   GridIcon,
   KeyIcon,
@@ -81,6 +82,16 @@ export function AppSidebar({
         <KeyIcon />
         Cofre
       </Link>
+      {/* Financeiro é só de admin — a rota também responde 404 para os demais. */}
+      {user.role === "admin" && (
+        <Link
+          href="/financeiro"
+          className={navClass(pathname.startsWith("/financeiro"))}
+        >
+          <CashFlowIcon />
+          Financeiro
+        </Link>
+      )}
       <Link
         href="/diagnosticos"
         className={navClass(pathname.startsWith("/diagnosticos"))}

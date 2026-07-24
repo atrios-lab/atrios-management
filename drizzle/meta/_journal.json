@@ -71,6 +71,13 @@
       "when": 1784332324776,
       "tag": "0009_relatorios_cliente_interno",
       "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "7",
+      "when": 1784920469308,
+      "tag": "0010_sour_gunslinger",
+      "breakpoints": true
     }
   ]
 }

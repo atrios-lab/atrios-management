@@ -842,3 +842,64 @@ export const preCadastroSubmission = pgTable(
     index("pre_cadastro_submission_ip_idx").on(table.ip, table.createdAt),
   ],
 );
+
+/* ---- Financeiro (fluxo de caixa dos sócios) ----------------------------- */
+
+export type LancamentoTipo = "receita" | "despesa";
+/** Chaves do catálogo fixo em lib/financeiro-constants.ts. */
+export type CategoriaId =
+  | "receita_cliente"
+  | "infra"
+  | "servicos"
+  | "impostos"
+  | "pessoal";
+
+export const lancamento = pgTable(
+  "lancamento",
+  {
+    id: text("id")
+      .primaryKey()
+      .$defaultFn(() => crypto.randomUUID()),
+    tipo: text("tipo").$type<LancamentoTipo>().notNull(),
+    descricao: text("descricao").notNull(),
+    // Centavos inteiros e sempre positivos: o sinal vem de `tipo` e a soma de
+    // int é exata (numeric/float acumulariam erro no saldo).
+    valorCentavos: integer("valor_centavos").notNull(),
+    // `date` (não timestamp): o dia do lançamento é civil, sem fuso — senão o
+    // mês vira à meia-noite UTC e o extrato pula de mês para quem está em -03.
+    data: date("data").notNull(),
+    categoriaId: text("categoria_id").$type<CategoriaId>().notNull(),
+    produtoId: text("produto_id").references(() => product.id, {
+      onDelete: "set null",
+    }),
+    criadoPorId: text("criado_por_id").references(() => user.id, {
+      onDelete: "set null",
+    }),
+    criadoEm: timestamp("criado_em").defaultNow().notNull(),
+    atualizadoPorId: text("atualizado_por_id").references(() => user.id, {
+      onDelete: "set null",
+    }),
+    atualizadoEm: timestamp("atualizado_em")
+      .defaultNow()
+      .$onUpdate(() => /* @__PURE__ */ new Date())
+      .notNull(),
+  },
+  (table) => [index("lancamento_data_idx").on(table.data)],
+);
+
+export const lancamentoRelations = relations(lancamento, ({ one }) => ({
+  produto: one(product, {
+    fields: [lancamento.produtoId],
+    references: [product.id],
+  }),
+  criadoPor: one(user, {
+    fields: [lancamento.criadoPorId],
+    references: [user.id],
+    relationName: "lancamentoCriadoPor",
+  }),
+  atualizadoPor: one(user, {
+    fields: [lancamento.atualizadoPorId],
+    references: [user.id],
+    relationName: "lancamentoAtualizadoPor",
+  }),
+}));

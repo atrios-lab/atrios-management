@@ -736,3 +736,82 @@ export function ArrowUpIcon({ size = 15 }: IconProps) {
     </svg>
   );
 }
+
+export function ChevronLeftIcon({ size = 13 }: IconProps) {
+  return (
+    <svg
+      width={size}
+      height={size}
+      viewBox="0 0 16 16"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.5"
+      aria-hidden="true"
+    >
+      <path d="M10 4 6 8l4 4" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  );
+}
+
+/** Duas setas cruzadas (entra/sai) — ícone do módulo Financeiro. */
+export function CashFlowIcon({ size = 15 }: IconProps) {
+  return (
+    <svg
+      width={size}
+      height={size}
+      viewBox="0 0 16 16"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.4"
+      aria-hidden="true"
+    >
+      <path
+        d="M9.8 2.5h3.7v3.7M13.5 2.5 9 7M6.2 13.5H2.5V9.8M2.5 13.5 7 9"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </svg>
+  );
+}
+
+/** Seta que chega (receita). */
+export function ArrowInIcon({ size = 12 }: IconProps) {
+  return (
+    <svg
+      width={size}
+      height={size}
+      viewBox="0 0 16 16"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.6"
+      aria-hidden="true"
+    >
+      <path
+        d="M12.5 3.5 3.5 12.5M3.5 7v5.5H9"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </svg>
+  );
+}
+
+/** Seta que sai (despesa). */
+export function ArrowOutIcon({ size = 12 }: IconProps) {
+  return (
+    <svg
+      width={size}
+      height={size}
+      viewBox="0 0 16 16"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.6"
+      aria-hidden="true"
+    >
+      <path
+        d="M3.5 12.5 12.5 3.5M7 3.5h5.5V9"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </svg>
+  );
+}
