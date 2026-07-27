@@ -55,38 +55,29 @@ export default async function DiagnosticoPage({
           {diag.subclasse ?? ""} · {diag.uf}
         </span>
       </header>
-      <div className="flex-1 overflow-auto p-5">
-        <div className="mx-auto max-w-[720px]">
-          <p className="mb-4 text-[12.5px] leading-relaxed text-fg-7">
-            Roteiro de entrevista (call com a serventia). A pergunta técnica é
-            para você; o texto “como perguntar” é a versão em linguagem simples.
-            Se o entrevistado não souber responder, marque “Não sei”.
-          </p>
-          <EntrevistaForm
-            diagnosticoId={diag.id}
-            etapas={etapas.map((e) => ({
-              numero: e,
-              titulo: ETAPAS[e],
-              escopo: ETAPAS_ESCOPO[e],
-            }))}
-            requisitos={requisitos.map((r) => ({
-              id: r.id,
-              etapa: r.etapa,
-              refNormativa: r.refNormativa,
-              perguntaTecnica: r.perguntaTecnica,
-              perguntaSimples: r.perguntaSimples,
-              peso: r.peso,
-            }))}
-            identidade={IDENTIDADE_QUESTOES}
-            respostasIniciais={Object.fromEntries(
-              diag.respostas.map((r) => [r.requisitoId, r.valor]),
-            )}
-            identidadeIniciais={Object.fromEntries(
-              diag.respostasIdentidade.map((r) => [r.item, r.valor]),
-            )}
-          />
-        </div>
-      </div>
+      <EntrevistaForm
+        diagnosticoId={diag.id}
+        etapas={etapas.map((e) => ({
+          numero: e,
+          titulo: ETAPAS[e],
+          escopo: ETAPAS_ESCOPO[e],
+        }))}
+        requisitos={requisitos.map((r) => ({
+          id: r.id,
+          etapa: r.etapa,
+          refNormativa: r.refNormativa,
+          perguntaTecnica: r.perguntaTecnica,
+          perguntaSimples: r.perguntaSimples,
+          peso: r.peso,
+        }))}
+        identidade={IDENTIDADE_QUESTOES}
+        respostasIniciais={Object.fromEntries(
+          diag.respostas.map((r) => [r.requisitoId, r.valor]),
+        )}
+        identidadeIniciais={Object.fromEntries(
+          diag.respostasIdentidade.map((r) => [r.item, r.valor]),
+        )}
+      />
     </>
   );
 }

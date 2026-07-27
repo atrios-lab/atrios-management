@@ -129,102 +129,114 @@ export function EntrevistaForm({
   };
 
   return (
-    <div className="flex flex-col gap-4 pb-24">
-      {/* Identidade digital */}
-      <section className="rounded-panel border border-line bg-surface-card p-[18px]">
-        <h2 className="text-[13.5px] font-semibold text-fg-1">
-          Identidade digital da serventia
-        </h2>
-        <p className="mt-0.5 text-[11.5px] text-fg-8">
-          Não pontua no provimento — mapeia oportunidades de site, e-mail e
-          número corporativo.
-        </p>
-        <div className="mt-3 flex flex-col divide-y divide-line-subtle">
-          {identidade.map((q) => (
-            <div key={q.item} className="flex flex-col gap-2 py-3.5">
-              <p className="text-[13px] font-medium leading-snug text-fg-2">
-                {q.perguntaTecnica}
-              </p>
-              <p className="border-l-2 border-line pl-2.5 text-[12px] italic leading-snug text-fg-7">
-                Como perguntar: “{q.perguntaSimples}”
-              </p>
-              <Opcoes
-                name={q.perguntaTecnica}
-                valor={respostasIdent[q.item]}
-                onChange={(v) =>
-                  setRespostasIdent((prev) => ({ ...prev, [q.item]: v }))
-                }
-              />
-            </div>
-          ))}
-        </div>
-      </section>
+    <>
+      <div className="flex-1 overflow-auto p-5">
+        <div className="mx-auto flex max-w-[720px] flex-col gap-4">
+          <p className="text-[12.5px] leading-relaxed text-fg-7">
+            Roteiro de entrevista (call com a serventia). A pergunta técnica é
+            para você; o texto “como perguntar” é a versão em linguagem simples.
+            Se o entrevistado não souber responder, marque “Não sei”.
+          </p>
 
-      {/* Etapas do provimento */}
-      {etapas.map((etapa) => (
-        <section
-          key={etapa.numero}
-          className="rounded-panel border border-line bg-surface-card p-[18px]"
-        >
-          <h2 className="text-[13.5px] font-semibold text-fg-1">
-            {etapa.titulo}
-          </h2>
-          <p className="mt-0.5 text-[11.5px] text-fg-8">{etapa.escopo}</p>
-          <div className="mt-3 flex flex-col divide-y divide-line-subtle">
-            {requisitos
-              .filter((r) => r.etapa === etapa.numero)
-              .map((r) => (
-                <div key={r.id} className="flex flex-col gap-2 py-3.5">
+          {/* Identidade digital */}
+          <section className="rounded-panel border border-line bg-surface-card p-[18px]">
+            <h2 className="text-[13.5px] font-semibold text-fg-1">
+              Identidade digital da serventia
+            </h2>
+            <p className="mt-0.5 text-[11.5px] text-fg-8">
+              Não pontua no provimento — mapeia oportunidades de site, e-mail e
+              número corporativo.
+            </p>
+            <div className="mt-3 flex flex-col divide-y divide-line-subtle">
+              {identidade.map((q) => (
+                <div key={q.item} className="flex flex-col gap-2 py-3.5">
                   <p className="text-[13px] font-medium leading-snug text-fg-2">
-                    {r.perguntaTecnica}{" "}
-                    <span className="whitespace-nowrap text-[11px] font-normal text-fg-8">
-                      (Anexo IV, {r.refNormativa} · peso {r.peso})
-                    </span>
+                    {q.perguntaTecnica}
                   </p>
                   <p className="border-l-2 border-line pl-2.5 text-[12px] italic leading-snug text-fg-7">
-                    Como perguntar: “{r.perguntaSimples}”
+                    Como perguntar: “{q.perguntaSimples}”
                   </p>
                   <Opcoes
-                    name={r.perguntaTecnica}
-                    valor={respostas[r.id]}
+                    name={q.perguntaTecnica}
+                    valor={respostasIdent[q.item]}
                     onChange={(v) =>
-                      setRespostas((prev) => ({ ...prev, [r.id]: v }))
+                      setRespostasIdent((prev) => ({ ...prev, [q.item]: v }))
                     }
                   />
                 </div>
               ))}
-          </div>
-        </section>
-      ))}
+            </div>
+          </section>
 
-      {/* Barra de ações fixa */}
-      <div className="sticky bottom-0 -mx-1 flex items-center gap-3 rounded-panel border border-line-strong bg-surface-raised px-4 py-3 shadow-modal">
-        <span className="text-[12px] text-fg-6">
-          {respondidas}/{total} respondidas
-        </span>
-        {savedAt && !error && (
-          <span className="text-[11.5px] text-fg-8">
-            Salvo às {savedAt} — pode retomar depois se a call cair.
-          </span>
-        )}
-        {error && (
-          <span className="text-[11.5px] leading-tight text-danger">
-            {error}
-          </span>
-        )}
-        <div className="ml-auto flex shrink-0 gap-[9px]">
-          <Button
-            variant="secondary"
-            onClick={() => salvar(false)}
-            disabled={pending}
-          >
-            {pending ? "Salvando…" : "Salvar parcial"}
-          </Button>
-          <Button onClick={() => salvar(true)} disabled={pending}>
-            Concluir diagnóstico
-          </Button>
+          {/* Etapas do provimento */}
+          {etapas.map((etapa) => (
+            <section
+              key={etapa.numero}
+              className="rounded-panel border border-line bg-surface-card p-[18px]"
+            >
+              <h2 className="text-[13.5px] font-semibold text-fg-1">
+                {etapa.titulo}
+              </h2>
+              <p className="mt-0.5 text-[11.5px] text-fg-8">{etapa.escopo}</p>
+              <div className="mt-3 flex flex-col divide-y divide-line-subtle">
+                {requisitos
+                  .filter((r) => r.etapa === etapa.numero)
+                  .map((r) => (
+                    <div key={r.id} className="flex flex-col gap-2 py-3.5">
+                      <p className="text-[13px] font-medium leading-snug text-fg-2">
+                        {r.perguntaTecnica}{" "}
+                        <span className="whitespace-nowrap text-[11px] font-normal text-fg-8">
+                          (Anexo IV, {r.refNormativa} · peso {r.peso})
+                        </span>
+                      </p>
+                      <p className="border-l-2 border-line pl-2.5 text-[12px] italic leading-snug text-fg-7">
+                        Como perguntar: “{r.perguntaSimples}”
+                      </p>
+                      <Opcoes
+                        name={r.perguntaTecnica}
+                        valor={respostas[r.id]}
+                        onChange={(v) =>
+                          setRespostas((prev) => ({ ...prev, [r.id]: v }))
+                        }
+                      />
+                    </div>
+                  ))}
+              </div>
+            </section>
+          ))}
         </div>
       </div>
-    </div>
+
+      {/* Barra de ações: fora da área de scroll, sempre visível */}
+      <div className="shrink-0 border-t border-line bg-surface-raised px-5 py-3">
+        <div className="mx-auto flex max-w-[720px] items-center gap-3">
+          <span className="text-[12px] text-fg-6">
+            {respondidas}/{total} respondidas
+          </span>
+          {savedAt && !error && (
+            <span className="text-[11.5px] text-fg-8">
+              Salvo às {savedAt} — pode retomar depois se a call cair.
+            </span>
+          )}
+          {error && (
+            <span className="text-[11.5px] leading-tight text-danger">
+              {error}
+            </span>
+          )}
+          <div className="ml-auto flex shrink-0 gap-[9px]">
+            <Button
+              variant="secondary"
+              onClick={() => salvar(false)}
+              disabled={pending}
+            >
+              {pending ? "Salvando…" : "Salvar parcial"}
+            </Button>
+            <Button onClick={() => salvar(true)} disabled={pending}>
+              Concluir diagnóstico
+            </Button>
+          </div>
+        </div>
+      </div>
+    </>
   );
 }
