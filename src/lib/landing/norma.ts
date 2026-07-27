@@ -34,7 +34,7 @@ export interface ClasseNorma {
 }
 
 export interface Norma {
-  /** dd/mm/aaaa — publicação no DJe/CNJ (art. 26: vigora na publicação). */
+  /** dd/mm/aaaa — vigência do Prov. 243 (base de contagem dos arts. 20 e 23). */
   vigencia: string;
   porClasse: Record<number, ClasseNorma>;
   /** Dias da prorrogação estadual do art. 21 (0 quando a UF não tem). */
@@ -45,9 +45,9 @@ export interface Norma {
   prorrogacaoData: string | null;
   /** Processo administrativo da decisão (ex.: "PP 0000897-..."). */
   prorrogacaoProcesso: string | null;
-  /** art. 16, I — teto de arrecadação semestral da Classe 1, em reais. */
+  /** art. 16, I (red. Prov. 243) — teto de receita bruta semestral da Classe 1, em reais. */
   tetoClasse1: number;
-  /** art. 16, II — teto de arrecadação semestral da Classe 2, em reais. */
+  /** art. 16, II (red. Prov. 243) — teto de receita bruta semestral da Classe 2, em reais. */
   tetoClasse2: number;
 }
 

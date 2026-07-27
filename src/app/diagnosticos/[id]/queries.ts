@@ -7,9 +7,11 @@ import * as schema from "@/db/schema";
 import {
   calcularPrazos,
   calcularScores,
+  dispensadoParaClasse,
   etapasDoEscopo,
   ordenarGaps,
   type ParametrosNorma,
+  PRORROGACAO_MAX_DIAS,
   type Prazos,
   parametrosParaClasse,
   statusPorScore,
@@ -61,12 +63,21 @@ export interface Gap extends Requisito {
   valor: RespostaValor;
 }
 
+/** Requisito dispensado para a classe (ex.: DPO na Classe 1 — Prov. 214). */
+export interface Dispensa {
+  id: string;
+  titulo: string;
+  nota: string;
+}
+
 export interface Relatorio {
   diagnostico: DiagnosticoRow;
   etapas: number[];
   porEtapa: Record<number, number>;
   geral: number;
   gaps: Gap[];
+  /** itens dispensados para a classe: fora do score, exibidos com base legal */
+  dispensas: Dispensa[];
   prazos: Prazos;
   parametros: ParametrosNorma;
   alerta: Alerta;
@@ -104,8 +115,8 @@ function montarAlerta(
         ? "⚠️ Prazo vencido — inclusive a prorrogação."
         : "⚠️ Prazo vencido.",
       corpo: comProrrogacao
-        ? `O prazo do art. 20 para as Etapas 1 e 2 (Classe ${diag.classe}), já somada a prorrogação de ${parametros.prorrogacaoDias} dias concedida pela CGJ-${diag.uf}, venceu em ${fmt(limiteInicial)} — há ${-dias} dias. Não há nova prorrogação possível (art. 21 admite uma única). A serventia está sujeita a fiscalização e PAD (art. 24). ${globalTxt}`
-        : `O prazo do art. 20 para as Etapas 1 e 2 (Classe ${diag.classe}) venceu em ${fmt(limiteInicial)} — há ${-dias} dias. O art. 21 admite uma única prorrogação de até 90 dias, mediante plano formal de adequação. A serventia está sujeita a fiscalização e PAD (art. 24). ${globalTxt}`,
+        ? `O prazo do art. 20 para as Etapas 1 e 2 (Classe ${diag.classe}), já somada a prorrogação de ${parametros.prorrogacaoDias} dias concedida pela CGJ-${diag.uf}, venceu em ${fmt(limiteInicial)} — há ${-dias} dias. O somatório das prorrogações do art. 21 é limitado a ${PRORROGACAO_MAX_DIAS} dias. A serventia está sujeita a fiscalização e PAD (art. 24). ${globalTxt}`
+        : `O prazo do art. 20 para as Etapas 1 e 2 (Classe ${diag.classe}) venceu em ${fmt(limiteInicial)} — há ${-dias} dias. O art. 21 admite prorrogações estaduais que, somadas, não podem passar de ${PRORROGACAO_MAX_DIAS} dias, mediante plano formal de adequação. A serventia está sujeita a fiscalização e PAD (art. 24). ${globalTxt}`,
       fonte,
     };
   }
@@ -113,8 +124,8 @@ function montarAlerta(
     tipo: "janela",
     titulo: comProrrogacao ? "⏳ Última janela." : "⏳ Prazo em curso.",
     corpo: comProrrogacao
-      ? `Com a prorrogação de ${parametros.prorrogacaoDias} dias concedida pela CGJ-${diag.uf}, as Etapas 1 e 2 devem estar concluídas até ${fmt(limiteInicial)} (${dias} dias restantes). É a única prorrogação que o art. 21 permite — e a decisão exige medidas mitigatórias desde já, com acompanhamento pela Seção de Correição. ${globalTxt}`
-      : `As Etapas 1 e 2 (art. 20, Classe ${diag.classe}) devem estar concluídas até ${fmt(limiteInicial)} (${dias} dias restantes). O art. 21 admite prorrogação única de até 90 dias mediante plano formal. ${globalTxt}`,
+      ? `Com a prorrogação de ${parametros.prorrogacaoDias} dias concedida pela CGJ-${diag.uf}, as Etapas 1 e 2 devem estar concluídas até ${fmt(limiteInicial)} (${dias} dias restantes). O somatório das prorrogações do art. 21 é limitado a ${PRORROGACAO_MAX_DIAS} dias — e a decisão exige medidas mitigatórias desde já. ${globalTxt}`
+      : `As Etapas 1 e 2 (art. 20, Classe ${diag.classe}) devem estar concluídas até ${fmt(limiteInicial)} (${dias} dias restantes). O art. 21 admite prorrogações estaduais que, somadas, não podem passar de ${PRORROGACAO_MAX_DIAS} dias, mediante plano formal. ${globalTxt}`,
     fonte,
   };
 }
@@ -135,8 +146,22 @@ export async function getRelatorio(diag: DiagnosticoRow): Promise<Relatorio> {
     diag.respostas.map((r) => [r.requisitoId, r.valor]),
   );
 
-  const { porEtapa, geral } = calcularScores(requisitos, respostas, etapas);
-  const gaps = ordenarGaps(requisitos, respostas).map((r) => ({
+  // Dispensados para a classe (ex.: DPO na Classe 1 — Prov. 214, art. 88 §4º):
+  // fora do score e dos gaps, exibidos à parte com a base legal.
+  const pontuaveis = requisitos.filter(
+    (r) => !dispensadoParaClasse(r.condicoes, classe),
+  );
+  const dispensas: Dispensa[] = requisitos
+    .filter((r) => dispensadoParaClasse(r.condicoes, classe))
+    .map((r) => ({
+      id: r.id,
+      // título do apontamento, nunca a pergunta (a pergunta é método interno)
+      titulo: r.apontamentoTitulo ?? r.refNormativa,
+      nota: r.condicoes?.dispensaNota ?? "Dispensado para esta classe.",
+    }));
+
+  const { porEtapa, geral } = calcularScores(pontuaveis, respostas, etapas);
+  const gaps = ordenarGaps(pontuaveis, respostas).map((r) => ({
     ...r,
     valor: respostas.get(r.id) ?? ("nao" as RespostaValor),
   }));
@@ -161,6 +186,7 @@ export async function getRelatorio(diag: DiagnosticoRow): Promise<Relatorio> {
     porEtapa,
     geral,
     gaps,
+    dispensas,
     prazos,
     parametros,
     alerta,

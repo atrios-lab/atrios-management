@@ -63,8 +63,9 @@ export default async function ServentiasPage({
           <Filtros />
         </div>
         <p className="mb-4 text-[11.5px] leading-relaxed text-fg-8">
-          A classe é uma <span className="text-fg-6">estimativa</span> pela
-          arrecadação, para priorização comercial — o enquadramento oficial é o
+          Classe e subclasse são <span className="text-fg-6">estimativas</span>{" "}
+          pela arrecadação declarada (proxy da receita bruta semestral do art.
+          2º, XXIV), para priorização comercial — o enquadramento oficial é o
           declarado pela própria serventia (art. 16 §1º).
         </p>
         {filtradas.length === 0 ? (
@@ -133,7 +134,10 @@ function Linha({ s }: { s: ServentiaComputed }) {
       <td className="px-3 py-2.5 text-[12.5px] text-fg-5">
         {brl.format(s.base)}
       </td>
-      <td className="px-3 py-2.5 text-[12.5px] text-fg-6">{s.classe}</td>
+      <td className="px-3 py-2.5 text-[12.5px] text-fg-6">
+        {s.classe}
+        {s.subclasse}
+      </td>
       <td className="px-3 py-2.5 text-[12px] text-fg-7">
         {fmtData(s.limiteInicial)}
       </td>

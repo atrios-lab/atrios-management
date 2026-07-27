@@ -290,6 +290,12 @@ export function gerarPdfCliente(
   paragrafo(ctx, d.oQueFalta.introducao, { size: 9, cor: CINZA_TXT });
   doc.moveDown(0.2);
   if (d.oQueFalta.vazio) paragrafo(ctx, d.oQueFalta.vazio, { cor: CINZA_TXT });
+  for (const disp of d.oQueFalta.dispensados)
+    paragrafo(ctx, disp, {
+      size: 8.5,
+      cor: "#2e7d32",
+      font: "Helvetica-Oblique",
+    });
   for (const etapa of d.oQueFalta.etapas) {
     ctx.ensure(36);
     doc.moveDown(0.4);
@@ -407,6 +413,12 @@ export function gerarPdfInterno(
   tituloSecao(ctx, VERMELHO, d.execucao.titulo);
   paragrafo(ctx, d.execucao.introducao, { size: 9, cor: CINZA_TXT });
   if (d.execucao.vazio) paragrafo(ctx, d.execucao.vazio, { cor: CINZA_TXT });
+  for (const disp of d.execucao.dispensados)
+    paragrafo(ctx, disp, {
+      size: 8.5,
+      cor: "#2e7d32",
+      font: "Helvetica-Oblique",
+    });
   for (const etapa of d.execucao.etapas) {
     ensure(44);
     doc.moveDown(0.5);

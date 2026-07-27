@@ -35,6 +35,7 @@ export function RelatorioView({ relatorio }: { relatorio: Relatorio }) {
     porEtapa,
     geral,
     gaps,
+    dispensas,
     parametros,
     alerta,
     identidadeOps,
@@ -210,6 +211,17 @@ export function RelatorioView({ relatorio }: { relatorio: Relatorio }) {
                     Etapa {g.etapa} · Anexo IV, {g.refNormativa} · situação:{" "}
                     {SITUACAO_GAP[g.valor]}
                   </div>
+                </div>
+              ))}
+              {dispensas.map((disp) => (
+                <div
+                  key={disp.id}
+                  className="rounded-field border border-line p-3 text-[12.5px] leading-snug"
+                  style={{ borderLeftWidth: 4, borderLeftColor: "#4cb782" }}
+                >
+                  <b style={{ color: "#4cb782" }}>DISPENSADO</b>{" "}
+                  <span className="text-fg-3">{disp.titulo}</span>
+                  <div className="mt-1 text-[11px] text-fg-7">{disp.nota}</div>
                 </div>
               ))}
             </div>
