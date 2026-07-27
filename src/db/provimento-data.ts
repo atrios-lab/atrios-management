@@ -402,6 +402,17 @@ export const REQS: ReqRow[] = [
     1,
     [1, 2, 3],
   ],
+  // Incluído pelo Prov. 243 (art. 4º, §3º): vedação a tecnologia EOL. Entra na
+  // Etapa 2 (estrutura) e SEMPRE no fim do array — os ids req-NN são
+  // posicionais, inserir no meio corromperia as respostas existentes.
+  [
+    2,
+    "art. 4º, §3º",
+    "Todos os sistemas e equipamentos do cartório ainda recebem atualizações e suporte do fabricante, ou existe algum já descontinuado (como um Windows antigo)? Existe comprovante disso guardado?",
+    "Há tecnologia em uso com ciclo de suporte oficial encerrado (End of Life)? A serventia mantém evidência documental da vigência do suporte técnico e das atualizações de segurança (art. 4º, §3º)?",
+    3,
+    [1, 2, 3],
+  ],
 ];
 
 /* ---- Apontamento (cliente) + roteiro de execução (interno) --------------- */
@@ -1039,6 +1050,20 @@ export const EXECUCAO: ExecucaoRow[] = [
     esforcoTemplateHoras: 0,
     esforcoServentiaHoras: 0.5,
   },
+  {
+    titulo: "Tecnologia com suporte do fabricante encerrado (End of Life)",
+    exigencia:
+      "A norma veda o uso de tecnologias cujo ciclo de suporte oficial pelo fabricante tenha sido encerrado (End of Life) e exige evidência documental atualizada da vigência do suporte técnico e das atualizações de segurança (art. 4º, §3º, incluído pelo Provimento n. 243/2026).",
+    consequencia:
+      "Tecnologia sem suporte vigente não é admitida para o cumprimento de nenhum requisito do Provimento, ressalvado o regime de transição do art. 20-A (art. 4º, §3º).",
+    roteiro:
+      "1. Levantar no inventário os sistemas operacionais, softwares e equipamentos em uso, com versões.\n2. Verificar junto a cada fabricante o ciclo de vida e a vigência do suporte.\n3. Planejar com o titular a substituição ou atualização do que estiver em End of Life.\n4. Arquivar no dossiê técnico a evidência documental do suporte vigente de cada item.",
+    artefato:
+      "Levantamento de ciclo de vida com evidência documental de suporte vigente no dossiê técnico",
+    natureza: "documento",
+    esforcoTemplateHoras: 1,
+    esforcoServentiaHoras: 2,
+  },
 ];
 
 /* ---- Condições e parâmetros ---------------------------------------------- */
@@ -1050,6 +1075,17 @@ export const CONDICOES_PENTEST: RequisitoCondicoes = {
   nota: "Operando em ambiente SaaS/centralizado, o pentest individual pode ser dispensado mediante relatório técnico coletivo do fornecedor e declaração do titular (Anexo II, 6.3).",
 };
 
+// Prov. 214/2026, art. 88, §4º: "Fica dispensada a obrigatoriedade de nomeação
+// de encarregado pelo tratamento de dados pessoais para as serventias
+// extrajudiciais classificadas como Classe I". O item continua na entrevista
+// (a designação segue possível e é oferta comercial), mas não pontua nem vira
+// pendência para a Classe 1.
+export const CONDICOES_DPO: RequisitoCondicoes = {
+  dispensaClasses: [1],
+  dispensaNota:
+    "Dispensado para a Classe 1: a nomeação de encarregado de proteção de dados deixou de ser obrigatória para serventias dessa classe (Provimento n. 214/2026, art. 88, §4º). O item não pontua nem entra como pendência; a designação permanece possível como boa prática de atendimento aos titulares de dados.",
+};
+
 export type SeedParametro = {
   chave: string;
   valor: string;
@@ -1057,55 +1093,56 @@ export type SeedParametro = {
   descricao?: string;
 };
 
+/**
+ * Ids (chave:uf) que já foram seedados e a norma superou — o seed os APAGA.
+ * Hoje: a prorrogação de 90 dias da CGJ-RN, que valia sobre o cronograma
+ * antigo do art. 20 e caiu com o novo cronograma nacional do Prov. 243.
+ */
+export const PARAMETROS_OBSOLETOS = [
+  "prorrogacao_art20_dias:RN",
+  "prorrogacao_data:RN",
+  "prorrogacao_processo:RN",
+];
+
 export const PARAMETROS: SeedParametro[] = [
   {
     chave: "vigencia",
-    // Entra em vigor na PUBLICAÇÃO (não há vacatio legis, art. 26): DJe/CNJ
-    // n. 40/2026, de 23/02/2026, p. 8-27. 20/02/2026 é só a data de assinatura.
-    valor: "2026-02-23",
+    // Base de contagem dos prazos (arts. 20, 22, §1º, III, e 23): a vigência do
+    // Provimento n. 243 (publicado no DJe/CNJ n. 172/2026 de 23/07/2026, em
+    // vigor 30 dias após a publicação), que reabriu a contagem dos dois prazos.
+    valor: "2026-08-22",
     descricao:
-      "Entrada em vigor do Provimento CNJ n. 213 (assinado em 20/02/2026, publicado no DJe/CNJ n. 40/2026 de 23/02/2026) — base de contagem dos prazos.",
+      "Entrada em vigor do Provimento CNJ n. 243 (publicado no DJe/CNJ n. 172/2026 de 23/07/2026, vigência 30 dias após) — base de contagem dos prazos dos arts. 20 e 23 do Provimento n. 213, na redação dada pelo n. 243.",
   },
-  // art. 16 — tetos de arrecadação semestral que separam as classes 1/2/3.
-  // Base do enquadramento estimado das serventias (motor.classePorArrecadacao).
+  // art. 16 (redação do Prov. 243) — tetos de receita bruta semestral que
+  // separam as classes 1/2/3. Base do enquadramento estimado das serventias
+  // (motor.classePorArrecadacao usa a arrecadação declarada como proxy).
   {
     chave: "teto_classe_1",
-    valor: "100000",
+    valor: "300000",
     descricao:
-      "Teto de arrecadação semestral da Classe 1 (art. 16, I) — até este valor a serventia é estimada como Classe 1.",
+      "Teto de receita bruta semestral da Classe 1 (art. 16, I, redação do Provimento n. 243) — até este valor a serventia é estimada como Classe 1.",
   },
   {
     chave: "teto_classe_2",
-    valor: "500000",
+    valor: "1500000",
     descricao:
-      "Teto de arrecadação semestral da Classe 2 (art. 16, II) — acima dele a serventia é estimada como Classe 3.",
+      "Teto de receita bruta semestral da Classe 2 (art. 16, II, redação do Provimento n. 243) — acima dele a serventia é estimada como Classe 3.",
   },
-  // art. 20 — Etapas 1+2 obrigatórias, em dias a partir da vigência
-  { chave: "prazo_art20_dias_classe_1", valor: "210" },
-  { chave: "prazo_art20_dias_classe_2", valor: "150" },
-  { chave: "prazo_art20_dias_classe_3", valor: "90" },
-  // art. 23 — todas as 5 etapas, em meses a partir da vigência
+  // art. 20 (redação do Prov. 243) — Etapas 1+2, em dias a partir da vigência
+  { chave: "prazo_art20_dias_classe_1", valor: "300" },
+  { chave: "prazo_art20_dias_classe_2", valor: "240" },
+  { chave: "prazo_art20_dias_classe_3", valor: "180" },
+  // art. 23 — todas as 5 etapas, em meses; o caput (redação do Prov. 243)
+  // manda contar da vigência do próprio 243, já refletida em `vigencia`.
   { chave: "prazo_art23_meses_classe_1", valor: "36" },
   { chave: "prazo_art23_meses_classe_2", valor: "30" },
   { chave: "prazo_art23_meses_classe_3", valor: "24" },
-  // prorrogações estaduais do art. 21 (uma única, "por até 90 dias" — teto legal)
-  {
-    chave: "prorrogacao_art20_dias",
-    valor: "90",
-    uf: "RN",
-    descricao:
-      "Decisão CGJ-RN de 02/07/2026, PP 0000897-12.2026.2.00.0820, a pedido da Anoreg/RN, que deferiu prorrogação de 90 dias — única admitida pelo art. 21, condicionada a medidas mitigatórias e acompanhamento pela Seção de Correição.",
-  },
-  // A `descricao` acima é prosa de proveniência, para quem lê o banco. O site
-  // institucional cita a decisão na própria copy, então data e processo entram
-  // também como valor estruturado: assim a página não hardcoda data nenhuma nem
-  // depende de fatiar texto livre.
-  { chave: "prorrogacao_data", valor: "02/07/2026", uf: "RN" },
-  {
-    chave: "prorrogacao_processo",
-    valor: "PP 0000897-12.2026.2.00.0820",
-    uf: "RN",
-  },
+  // Prorrogações estaduais do art. 21 (redação do Prov. 243): podem ocorrer em
+  // uma ou mais oportunidades, somando no máximo 180 dias. A prorrogação de 90
+  // dias da CGJ-RN (PP 0000897-12.2026.2.00.0820) valia sobre o cronograma
+  // ANTIGO do art. 20 e foi superada pelo novo cronograma nacional — as linhas
+  // dela saem do banco via PARAMETROS_OBSOLETOS.
   // parâmetros técnicos mínimos por classe (linha de cabeçalho do relatório)
   {
     chave: "parametros_tecnicos_classe_1",
@@ -1168,7 +1205,12 @@ export function montarRequisitosSeed(): RequisitoSeedRow[] {
       perguntaTecnica: tecnica,
       peso,
       classes,
-      condicoes: ref === "4.7" ? CONDICOES_PENTEST : null,
+      condicoes:
+        ref === "4.7"
+          ? CONDICOES_PENTEST
+          : tecnica.includes("(DPO)")
+            ? CONDICOES_DPO
+            : null,
       ordem: i + 1,
       ativo: true,
       apontamentoTitulo: e.titulo,
@@ -1181,9 +1223,9 @@ export function montarRequisitosSeed(): RequisitoSeedRow[] {
       esforcoServentiaHoras: String(e.esforcoServentiaHoras),
       exigeCapex: e.capex != null,
       capexDescricao: e.capex ?? null,
-      // Esqueleto derivado do requisito: pendente de revisão humana até a
-      // equipe passar por cada texto (o PDF interno marca o que falta).
-      revisado: false,
+      // Textos dados como revisados pela equipe. Requisito novo ainda não
+      // conferido deve entrar com false até a revisão (o PDF interno marca).
+      revisado: true,
     };
   });
 }

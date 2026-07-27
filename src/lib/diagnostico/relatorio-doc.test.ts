@@ -8,6 +8,7 @@ import type { RespostaValor } from "@/db/schema";
 import {
   calcularPrazos,
   calcularScores,
+  dispensadoParaClasse,
   ordenarGaps,
   type ParametroRow,
   parametrosParaClasse,
@@ -36,13 +37,24 @@ const parametroRows: ParametroRow[] = PARAMETROS.map((p) => ({
 function montarDados(classe: number): DadosRelatorio {
   const etapas = [1, 2, 3, 4, 5];
   const aplicaveis = seedRows.filter((r) => r.classes.includes(classe));
+  // Mesma regra do getRelatorio: dispensados (ex.: DPO na Classe 1) saem do
+  // score e dos gaps e entram como dispensa com base legal.
+  const pontuaveis = aplicaveis.filter(
+    (r) => !dispensadoParaClasse(r.condicoes, classe),
+  );
+  const dispensas = aplicaveis
+    .filter((r) => dispensadoParaClasse(r.condicoes, classe))
+    .map((r) => ({
+      titulo: r.apontamentoTitulo,
+      nota: r.condicoes?.dispensaNota ?? "",
+    }));
   // Mistura determinística: garante nao/parcial/nao_sei/sim no mesmo relatório.
   const ciclo: RespostaValor[] = ["nao", "parcial", "nao_sei", "sim"];
   const respostas = new Map<string, RespostaValor>(
-    aplicaveis.map((r, i) => [r.id, ciclo[i % ciclo.length]]),
+    pontuaveis.map((r, i) => [r.id, ciclo[i % ciclo.length]]),
   );
-  const { porEtapa, geral } = calcularScores(aplicaveis, respostas, etapas);
-  const gaps = ordenarGaps(aplicaveis, respostas).map((r) => ({
+  const { porEtapa, geral } = calcularScores(pontuaveis, respostas, etapas);
+  const gaps = ordenarGaps(pontuaveis, respostas).map((r) => ({
     ...r,
     valor: respostas.get(r.id) ?? ("nao" as RespostaValor),
   }));
@@ -66,6 +78,7 @@ function montarDados(classe: number): DadosRelatorio {
     porEtapa,
     geral,
     gaps,
+    dispensas,
     prazos: calcularPrazos(parametros, HOJE),
     parametros,
     identidadeOps: [
@@ -186,12 +199,13 @@ describe("regras dos dois documentos", () => {
     expect(ressalva(stringsInterno)).toBeGreaterThanOrEqual(2);
   });
 
-  it("prazos do art. 20 + prorrogação RN batem com a classe", () => {
-    // Vigência 2026-02-23, art. 20 = 210/150/90 dias, prorrogação RN = 90 dias.
+  it("prazos do art. 20 batem com a classe (vigência do Prov. 243)", () => {
+    // Vigência 2026-08-22 (Prov. 243), art. 20 = 300/240/180 dias, sem
+    // prorrogação estadual vigente.
     const esperado: Record<number, string> = {
-      1: "2026-12-20",
-      2: "2026-10-21",
-      3: "2026-08-22",
+      1: "2027-06-18",
+      2: "2027-04-19",
+      3: "2027-02-18",
     };
     for (const classe of [1, 2, 3]) {
       const p = parametrosParaClasse(parametroRows, classe, "RN");
@@ -234,9 +248,9 @@ describe("relatório interno", () => {
         /Esforço: .+ de template \(uma vez\) \+ .+ por serventia\./,
       );
     }
-    // esqueleto do seed ainda não revisado → marcado no documento
+    // seed inteiro revisado → nenhum aviso de pendência no documento
     expect(stringsInterno.some((s) => s.includes("PENDENTE DE REVISÃO"))).toBe(
-      true,
+      false,
     );
   });
 
@@ -261,11 +275,11 @@ describe("relatório interno", () => {
   });
 });
 
-/* ---- Conteúdo seedado (os 48 textos) -------------------------------------- */
+/* ---- Conteúdo seedado (os 49 textos) -------------------------------------- */
 
 describe("conteúdo do seed", () => {
-  it("cada um dos 48 requisitos tem apontamento e roteiro completos", () => {
-    expect(seedRows.length).toBe(48);
+  it("cada um dos 49 requisitos tem apontamento e roteiro completos", () => {
+    expect(seedRows.length).toBe(49);
     for (const r of seedRows) {
       expect(r.apontamentoTitulo.length, r.id).toBeGreaterThan(0);
       expect(r.apontamentoExigencia, r.id).toMatch(/\((Anexo|art\.)/);
@@ -274,8 +288,9 @@ describe("conteúdo do seed", () => {
       expect(r.artefato.length, r.id).toBeGreaterThan(0);
       expect(r.natureza.length, r.id).toBeGreaterThan(0);
       expect(r.exigeCapex).toBe(r.capexDescricao != null);
-      // esqueleto entra pendente de revisão humana
-      expect(r.revisado).toBe(false);
+      // seed entra como revisado (decisão de 27/07/2026); requisito novo
+      // ainda não conferido entra com false
+      expect(r.revisado).toBe(true);
     }
   });
 
@@ -307,6 +322,40 @@ describe("conteúdo do seed", () => {
       expect(r.apontamentoTitulo).not.toBe(r.perguntaSimples);
       expect(r.apontamentoExigencia).not.toContain(r.perguntaTecnica);
       expect(r.apontamentoExigencia).not.toContain(r.perguntaSimples);
+    }
+  });
+});
+
+/* ---- Dispensa do DPO para a Classe 1 (Prov. 214, art. 88, §4º) ------------ */
+
+describe("dispensa do DPO na Classe 1", () => {
+  const dados1 = montarDados(1);
+  const cliente1 = montarDocCliente(dados1, HOJE);
+  const interno1 = montarDocInterno(dados1, HOJE);
+
+  it("o item sai dos gaps e entra como dispensado com a base legal", () => {
+    expect(dados1.dispensas).toHaveLength(1);
+    const apontamentos = [
+      ...cliente1.oQueFalta.etapas.flatMap((e) => e.apontamentos),
+      ...interno1.execucao.etapas.flatMap((e) => e.apontamentos),
+    ];
+    for (const a of apontamentos) {
+      expect(a.titulo).not.toContain("encarregado de proteção de dados");
+    }
+    for (const doc of [cliente1.oQueFalta, interno1.execucao]) {
+      expect(doc.dispensados).toHaveLength(1);
+      expect(doc.dispensados[0]).toContain("art. 88, §4º");
+      expect(doc.dispensados[0]).toContain("214");
+    }
+  });
+
+  it("para Classes 2 e 3 o item continua normal, sem dispensa", () => {
+    for (const classe of [2, 3]) {
+      const dados = montarDados(classe);
+      expect(dados.dispensas).toHaveLength(0);
+      expect(montarDocCliente(dados, HOJE).oQueFalta.dispensados).toHaveLength(
+        0,
+      );
     }
   });
 });

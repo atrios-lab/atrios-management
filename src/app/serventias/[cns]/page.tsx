@@ -62,7 +62,8 @@ export default async function ServentiaPage({
               </span>
             )}
             <span className="rounded-chip bg-[rgba(94,106,210,0.14)] px-2 py-0.5 text-[11px] font-semibold uppercase tracking-[0.05em] text-primary-ink">
-              Classe {s.classe} estimada
+              Classe {s.classe}
+              {s.subclasse} estimada
             </span>
             <span className="text-xs text-fg-8">CNS {s.cns}</span>
           </div>

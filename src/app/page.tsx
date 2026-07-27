@@ -79,8 +79,14 @@ const WA_TEXTO =
 const WA_TEXTO_CARTORIO =
   "Olá! Vim pelo site e quero falar sobre a adequação da minha serventia ao Provimento CNJ 213/2026.";
 
-/** "R$ 100 mil" — a faixa da norma é sempre múltipla de mil, e o design pede a forma curta. */
-const brlCurto = (v: number) => `R$ ${(v / 1000).toLocaleString("pt-BR")} mil`;
+/** "R$ 300 mil" / "R$ 1,5 milhão" — a faixa da norma é sempre múltipla de mil, e o design pede a forma curta. */
+const brlCurto = (v: number) => {
+  if (v >= 1_000_000) {
+    const m = v / 1_000_000;
+    return `R$ ${m.toLocaleString("pt-BR")} ${m < 2 ? "milhão" : "milhões"}`;
+  }
+  return `R$ ${(v / 1000).toLocaleString("pt-BR")} mil`;
+};
 
 /* ---- Primitivos ---------------------------------------------------------- */
 
@@ -565,7 +571,7 @@ function Prazos({ norma }: { norma: Norma }) {
               </div>
               <span className="text-[12.5px] leading-[1.45] text-fg-6">
                 {c === 3
-                  ? `Arrecadação acima de ${brlCurto(norma.tetoClasse2)}/semestre`
+                  ? `Receita bruta acima de ${brlCurto(norma.tetoClasse2)}/semestre`
                   : c === 2
                     ? `Entre ${brlCurto(norma.tetoClasse1)} e ${brlCurto(norma.tetoClasse2)}/semestre`
                     : `Até ${brlCurto(norma.tetoClasse1)}/semestre`}
@@ -586,10 +592,13 @@ function Prazos({ norma }: { norma: Norma }) {
         })}
       </div>
       <p className="max-w-[760px] text-[12.5px] leading-[1.6] text-fg-7">
-        Contagem sobre o prazo do art. 20, já somada à prorrogação de{" "}
-        {norma.prorrogacaoDias} dias da CGJ-RN. A classe é declarada pela
-        própria serventia (art. 16, §1º), então qualquer classe exibida aqui é
-        estimativa.
+        Contagem sobre o prazo do art. 20, a partir da vigência do Provimento
+        243/2026 ({norma.vigencia})
+        {norma.prorrogacaoDias > 0
+          ? `, já somada à prorrogação de ${norma.prorrogacaoDias} dias da CGJ-RN`
+          : ""}
+        . A classe é declarada pela própria serventia (art. 16, §1º), então
+        qualquer classe exibida aqui é estimativa.
       </p>
     </div>
   );
@@ -602,14 +611,15 @@ function Classes({ norma }: { norma: Norma }) {
     3: `Acima de ${brlCurto(norma.tetoClasse2)}`,
   };
   const desc: Record<number, string> = {
-    1: "Serventias de menor arrecadação. Prazos mais longos, mesmo conjunto de etapas.",
-    2: "Arrecadação intermediária por semestre. Exigências completas de segurança e backup.",
-    3: "Maior arrecadação e maior exigência técnica. Os prazos mais curtos da norma.",
+    1: "Serventias de menor receita. Prazos mais longos, mesmo conjunto de etapas. Subclasses A, B e C.",
+    2: "Receita intermediária por semestre. Exigências completas de segurança e backup. Subclasses D, E e F.",
+    3: "Maior receita e maior exigência técnica. Os prazos mais curtos da norma. Subclasses G a J.",
   };
   return (
     <div className="flex flex-col gap-3">
       <h3 className="text-[15px] font-semibold text-fg-2">
-        As 3 classes, por arrecadação (semestral, corrigida por IPCA)
+        As 3 classes, por receita bruta semestral (limites atualizados a cada
+        ano pelo CNJ)
       </h3>
       <div className="grid gap-3 md:grid-cols-3">
         {[1, 2, 3].map((c) => {
@@ -730,9 +740,11 @@ function Cartorios({ norma }: { norma: Norma }) {
       intro={
         <>
           A norma revogou o Prov. 74/2018 e definiu padrões de TIC, segurança e
-          LGPD para todas as serventias extrajudiciais. A adequação é dividida
-          por classe de arrecadação e cumprida em cinco etapas sequenciais. As
-          Etapas 1 e 2 já são obrigatórias.
+          LGPD para todas as serventias extrajudiciais. O Provimento 243/2026
+          atualizou o enquadramento (por receita bruta semestral, com subclasses
+          A a J) e refez os prazos. A adequação é dividida por classe e cumprida
+          em cinco etapas sequenciais, com as Etapas 1 e 2 como implementação
+          inicial obrigatória.
         </>
       }
       className="border-y border-line bg-surface-1"
@@ -743,17 +755,20 @@ function Cartorios({ norma }: { norma: Norma }) {
         <Etapas />
         <Card className="max-w-[820px] border-primary/22 bg-primary/5">
           <span className="text-[14.5px] font-semibold text-fg-1">
-            {`A prorrogação da CGJ-RN é de ${norma.prorrogacaoDias} dias, e é única.`}
+            O Provimento 243/2026 redefiniu o cronograma nacional.
           </span>
           <p className="text-[13.5px] leading-[1.6] text-fg-4">
-            {norma.prorrogacaoData && norma.prorrogacaoProcesso
-              ? `Decisão de ${norma.prorrogacaoData} (${norma.prorrogacaoProcesso}). `
+            Com vigência a partir de {norma.vigencia}, o enquadramento passou a
+            usar a receita bruta semestral (emolumentos e demais receitas do
+            serviço, deduzidos apenas valores de terceiros e repasses legais
+            obrigatórios), foram criadas as subclasses A a J e os prazos das
+            Etapas 1 e 2 foram recontados por classe, como mostram os cartões
+            acima. Prorrogações estaduais do art. 21 continuam possíveis, mas o
+            somatório delas não pode passar de 180 dias
+            {norma.prorrogacaoDias > 0
+              ? ` (no RN, ${norma.prorrogacaoDias} dias já concedidos)`
               : ""}
-            Vale de ofício para todas as serventias do RN, ninguém precisa
-            requerer. O art. 21 permite prorrogar uma única vez, então não
-            haverá outra. E o prazo adicional não dispensa nada: durante o
-            período, as medidas mitigatórias continuam obrigatórias. A norma
-            está em vigor desde {norma.vigencia}.
+            .
           </p>
         </Card>
         <CtaCartorios />
@@ -1090,8 +1105,8 @@ function Rodape() {
             <LogoAtriosLockup className="h-[36px] w-auto self-start text-white" />
             <p className="max-w-[420px] text-[13px] leading-[1.6] text-fg-6">
               Software sob medida, segurança da informação e LGPD, e a vertical
-              de cartórios (Provimento CNJ 213/2026). A mesma competência que
-              constrói sistemas também os protege.
+              de cartórios (Provimento CNJ 213/2026, atualizado pelo 243/2026).
+              A mesma competência que constrói sistemas também os protege.
             </p>
             <span className="text-[11px] font-semibold uppercase tracking-[0.06em] text-fg-8">
               A Technology Group Company

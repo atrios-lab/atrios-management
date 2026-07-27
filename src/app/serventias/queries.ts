@@ -12,6 +12,7 @@ import {
   classePorArrecadacao,
   type ParametroRow,
   parametrosParaClasse,
+  subclassePorReceita,
   type TetosNorma,
   tetosDaNorma,
 } from "@/lib/diagnostico/motor";
@@ -36,6 +37,8 @@ export interface ServentiaComputed {
   base: number;
   /** classe ESTIMADA (art. 16 §1º: oficial é a declarada pela serventia) */
   classe: number;
+  /** subclasse ESTIMADA (art. 16, A a J — régua de dimensionamento e preço) */
+  subclasse: string;
   limiteInicial: Date;
   limiteTotal: Date;
   diasRestantesInicial: number;
@@ -60,6 +63,11 @@ function computar(
     tetos.tetoClasse1,
     tetos.tetoClasse2,
   );
+  const subclasse = subclassePorReceita(
+    base,
+    tetos.tetoClasse1,
+    tetos.tetoClasse2,
+  );
   const parametros = parametrosParaClasse(parametroRows, classe, s.uf);
   const prazos = calcularPrazos(parametros, hoje);
   return {
@@ -79,6 +87,7 @@ function computar(
     arrecPeriodo: s.arrecPeriodo,
     base,
     classe,
+    subclasse,
     limiteInicial: prazos.limiteInicial,
     limiteTotal: prazos.limiteTotal,
     diasRestantesInicial: prazos.diasRestantesInicial,

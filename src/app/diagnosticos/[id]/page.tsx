@@ -6,7 +6,7 @@ import {
   ETAPAS_ESCOPO,
   IDENTIDADE_QUESTOES,
 } from "@/lib/diagnostico/constants";
-import { etapasDoEscopo } from "@/lib/diagnostico/motor";
+import { dispensadoParaClasse, etapasDoEscopo } from "@/lib/diagnostico/motor";
 import { EntrevistaForm } from "./entrevista-form";
 import { LeadNovoView } from "./lead-novo";
 import {
@@ -76,6 +76,11 @@ export default async function DiagnosticoPage({
               perguntaTecnica: r.perguntaTecnica,
               perguntaSimples: r.perguntaSimples,
               peso: r.peso,
+              dispensa:
+                diag.classe != null &&
+                dispensadoParaClasse(r.condicoes, diag.classe)
+                  ? (r.condicoes?.dispensaNota ?? "Dispensado para a classe.")
+                  : null,
             }))}
             identidade={IDENTIDADE_QUESTOES}
             respostasIniciais={Object.fromEntries(
