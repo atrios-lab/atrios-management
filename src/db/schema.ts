@@ -502,6 +502,11 @@ export type RequisitoCondicoes = {
   // exibe a nota no relatório quando o modelo de solução do diagnóstico bate
   notaModelos?: DiagnosticoModelo[];
   nota?: string;
+  // classes em que o requisito é dispensado (ex.: DPO na Classe 1 —
+  // Provimento 214, art. 88, §4º): não pontua nem vira pendência, mas o
+  // relatório exibe a dispensa com a base legal.
+  dispensaClasses?: number[];
+  dispensaNota?: string;
 };
 
 /** Natureza do trabalho de adequação: quem faz e como custa (relatório interno). */

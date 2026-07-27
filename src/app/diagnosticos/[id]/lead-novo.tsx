@@ -93,9 +93,9 @@ export function LeadNovoView({ diag }: { diag: DiagnosticoRow }) {
             </div>
 
             <p className="text-[12.5px] leading-relaxed text-fg-7">
-              Para iniciar a entrevista, complete a classe (arrecadação) e
-              demais dados da serventia — o roteiro do provimento depende da
-              classe.
+              Para iniciar a entrevista, complete a classe (receita bruta
+              semestral) e demais dados da serventia — o roteiro do provimento
+              depende da classe.
             </p>
           </div>
         </div>

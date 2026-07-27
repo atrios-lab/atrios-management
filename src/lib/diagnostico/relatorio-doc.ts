@@ -29,7 +29,7 @@ import {
   STATUS_ETAPA_LABEL,
 } from "./constants";
 import type { ParametrosNorma, Prazos } from "./motor";
-import { statusPorScore } from "./motor";
+import { PRORROGACAO_MAX_DIAS, statusPorScore } from "./motor";
 
 /* ---- Entrada (estrutural, satisfeita pelo Relatorio de queries.ts) ------- */
 
@@ -73,6 +73,8 @@ export interface DadosRelatorio {
   porEtapa: Record<number, number>;
   geral: number;
   gaps: GapDoc[];
+  /** itens dispensados para a classe (ex.: DPO na Classe 1 — Prov. 214) */
+  dispensas?: { titulo: string; nota: string }[];
   prazos: Prazos;
   parametros: ParametrosNorma;
   identidadeOps: { item: IdentidadeItem; valor: RespostaValor }[];
@@ -123,6 +125,8 @@ export interface DocCliente {
     titulo: string;
     introducao: string;
     vazio: string | null;
+    /** itens que a norma dispensa para a classe, com a base legal */
+    dispensados: string[];
     etapas: {
       numero: number;
       titulo: string;
@@ -170,6 +174,8 @@ export interface DocInterno {
     titulo: string;
     introducao: string;
     vazio: string | null;
+    /** itens que a norma dispensa para a classe (não dimensionar execução) */
+    dispensados: string[];
     etapas: {
       numero: number;
       titulo: string;
@@ -297,8 +303,8 @@ function linhasPrazo(dados: DadosRelatorio): string[] {
     const ref = decisao ? ` (${decisao})` : "";
     linhas.push(
       dias >= 0
-        ? `A data já considera a prorrogação de ${parametros.prorrogacaoDias} dias concedida pela CGJ-${d.uf.toUpperCase()}${ref}, única admitida pelo art. 21 e válida para todas as serventias do estado. As medidas de adequação continuam exigidas durante o período.`
-        : `A data já considerava a prorrogação de ${parametros.prorrogacaoDias} dias concedida pela CGJ-${d.uf.toUpperCase()}${ref}. O art. 21 admite uma única prorrogação: não há nova prorrogação possível.`,
+        ? `A data já considera a prorrogação de ${parametros.prorrogacaoDias} dias concedida pela CGJ-${d.uf.toUpperCase()}${ref}. O somatório das prorrogações do art. 21 é limitado a ${PRORROGACAO_MAX_DIAS} dias, e as medidas de adequação continuam exigidas durante o período.`
+        : `A data já considerava a prorrogação de ${parametros.prorrogacaoDias} dias concedida pela CGJ-${d.uf.toUpperCase()}${ref}. O somatório das prorrogações do art. 21 é limitado a ${PRORROGACAO_MAX_DIAS} dias.`,
     );
   }
   linhas.push(
@@ -306,6 +312,13 @@ function linhasPrazo(dados: DadosRelatorio): string[] {
   );
   linhas.push(RESSALVA_CLASSE);
   return linhas;
+}
+
+/** "Título: nota de dispensa" por item dispensado (ex.: DPO na Classe 1). */
+function linhasDispensa(dados: DadosRelatorio): string[] {
+  return (dados.dispensas ?? []).map((d) =>
+    semTravessao(`${d.titulo}. ${d.nota}`),
+  );
 }
 
 function veredito(dados: DadosRelatorio): DocCliente["veredito"] {
@@ -360,7 +373,8 @@ export function montarDocCliente(
     arquivo: nomeArquivoCliente(d.serventia),
     capa: {
       titulo: "Diagnóstico de Adequação",
-      subtitulo: "Provimento CNJ n. 213/2026 e LGPD",
+      subtitulo:
+        "Provimento CNJ n. 213/2026 (atualizado pelo Provimento n. 243/2026) e LGPD",
       serventia: d.serventia,
       local: d.municipio ? `${d.municipio}/${d.uf}` : d.uf,
       classe: `Classe ${d.classe}${d.subclasse ?? ""} (estimada)`,
@@ -381,6 +395,7 @@ export function montarDocCliente(
         etapasComGaps.length === 0
           ? "Nenhuma pendência identificada nos requisitos avaliados. O resultado reflete as informações declaradas e será confirmado em levantamento técnico."
           : null,
+      dispensados: linhasDispensa(dados),
       etapas: etapasComGaps,
     },
     emJogo: {
@@ -498,7 +513,7 @@ export function montarDocInterno(
     capa: {
       titulo: "Relatório Interno: Roteiro de Execução",
       subtitulo:
-        "Provimento CNJ n. 213/2026 e LGPD · dimensionamento comercial e execução",
+        "Provimento CNJ n. 213/2026 (atualizado pelo n. 243/2026) e LGPD · dimensionamento comercial e execução",
       serventia: d.serventia,
       identificacao: [
         [
@@ -534,6 +549,7 @@ export function montarDocInterno(
         etapas.length === 0
           ? "Nenhum gap identificado: não há execução a dimensionar."
           : null,
+      dispensados: linhasDispensa(dados),
       etapas,
     },
     ordemExecucao: {

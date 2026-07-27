@@ -18,7 +18,11 @@ import {
   SUBCLASSES,
   UFS,
 } from "@/lib/diagnostico/constants";
-import { calcularScores, etapasDoEscopo } from "@/lib/diagnostico/motor";
+import {
+  calcularScores,
+  dispensadoParaClasse,
+  etapasDoEscopo,
+} from "@/lib/diagnostico/motor";
 import { publish } from "@/lib/realtime/publish";
 import { channels } from "@/lib/realtime/types";
 
@@ -83,7 +87,7 @@ export async function createDiagnostico(input: {
   if (!(UFS as readonly string[]).includes(uf))
     return { error: "UF inválida." };
   if (![1, 2, 3].includes(input.classe))
-    return { error: "Selecione a faixa de arrecadação (classe)." };
+    return { error: "Selecione a faixa de receita bruta (classe)." };
   const subclasse = input.subclasse?.trim().toUpperCase() || null;
   if (subclasse && !SUBCLASSES[input.classe].includes(subclasse))
     return { error: "Subclasse inválida para a classe selecionada." };
@@ -197,10 +201,21 @@ export async function concluirDiagnostico(
   const etapas = etapasDoEscopo(diag.escopo);
   const requisitos = await db.query.requisito.findMany({
     where: eq(schema.requisito.ativo, true),
-    columns: { id: true, etapa: true, peso: true, classes: true },
+    columns: {
+      id: true,
+      etapa: true,
+      peso: true,
+      classes: true,
+      condicoes: true,
+    },
   });
+  // Dispensados para a classe (ex.: DPO na Classe 1) não pontuam nem contam
+  // como pergunta pendente — mesma regra do relatório (getRelatorio).
   const aplicaveis = requisitos.filter(
-    (r) => etapas.includes(r.etapa) && r.classes.includes(classe),
+    (r) =>
+      etapas.includes(r.etapa) &&
+      r.classes.includes(classe) &&
+      !dispensadoParaClasse(r.condicoes, classe),
   );
 
   const respondidos = new Set(diag.respostas.map((r) => r.requisitoId));

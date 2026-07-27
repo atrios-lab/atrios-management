@@ -41,6 +41,7 @@ export interface NovoDiagnosticoInitial {
   municipio?: string;
   uf?: string;
   classe?: number;
+  subclasse?: string;
   contatoNome?: string;
   contatoEmail?: string;
   contatoWhatsapp?: string;
@@ -57,7 +58,7 @@ export function NovoDiagnosticoForm({
   const [municipio, setMunicipio] = useState(initial?.municipio ?? "");
   const [uf, setUf] = useState(initial?.uf ?? "");
   const [classe, setClasse] = useState(initial?.classe ?? 0);
-  const [subclasse, setSubclasse] = useState("");
+  const [subclasse, setSubclasse] = useState(initial?.subclasse ?? "");
   const [modelo, setModelo] = useState<DiagnosticoModelo>("propria");
   const [contatoNome, setContatoNome] = useState(initial?.contatoNome ?? "");
   const [contatoEmail, setContatoEmail] = useState(initial?.contatoEmail ?? "");
@@ -138,7 +139,7 @@ export function NovoDiagnosticoForm({
       </div>
       <div className="grid grid-cols-[1fr_120px] gap-3">
         <Field
-          label="Quanto o cartório arrecada, em média, por semestre? *"
+          label="Qual a receita bruta do cartório, em média, por semestre? *"
           htmlFor="nd-classe"
         >
           <select
@@ -151,9 +152,11 @@ export function NovoDiagnosticoForm({
             }}
           >
             <option value="">Selecione…</option>
-            <option value="1">Até R$ 100 mil (Classe 1)</option>
-            <option value="2">Entre R$ 100 mil e R$ 500 mil (Classe 2)</option>
-            <option value="3">Acima de R$ 500 mil (Classe 3)</option>
+            {[1, 2, 3].map((c) => (
+              <option key={c} value={c}>
+                {CLASSE_LABEL[c]}
+              </option>
+            ))}
           </select>
         </Field>
         <Field label="Subclasse" htmlFor="nd-subclasse">
@@ -173,9 +176,12 @@ export function NovoDiagnosticoForm({
           </select>
         </Field>
       </div>
-      {classe > 0 && (
-        <p className="-mt-2 text-[11px] text-fg-8">{CLASSE_LABEL[classe]}</p>
-      )}
+      <p className="-mt-2 text-[11px] leading-snug text-fg-8">
+        Receita bruta semestral (art. 2º, XXIV): emolumentos e demais receitas
+        do serviço, inclusive ressarcimento de atos gratuitos e complementação
+        de renda mínima. Deduza apenas valores de terceiros e repasses legais
+        obrigatórios — não deduza custeio, pessoal, investimento nem tributos.
+      </p>
       <Field
         label="Onde fica o sistema que o cartório usa no dia a dia?"
         htmlFor="nd-modelo"

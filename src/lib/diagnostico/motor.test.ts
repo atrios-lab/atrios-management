@@ -5,11 +5,13 @@ import {
   calcularPrazos,
   calcularScores,
   classePorArrecadacao,
+  dispensadoParaClasse,
   etapasDoEscopo,
   ordenarGaps,
   PRORROGACAO_MAX_DIAS,
   parametrosParaClasse,
   statusPorScore,
+  subclassePorReceita,
   tetosDaNorma,
 } from "./motor";
 
@@ -162,20 +164,21 @@ describe("parametrosParaClasse", () => {
     expect(() => parametrosParaClasse(rows, 3, "SP")).toThrow(/classe 3/);
   });
 
-  it("aceita prorrogação no teto legal de 90 dias", () => {
-    expect(PRORROGACAO_MAX_DIAS).toBe(90);
+  it("aceita prorrogação no teto legal de 180 dias (art. 21, §3º)", () => {
+    expect(PRORROGACAO_MAX_DIAS).toBe(180);
     const noTeto = rows.map((r) =>
       r.chave === "prorrogacao_art20_dias"
         ? { ...r, valor: String(PRORROGACAO_MAX_DIAS) }
         : r,
     );
-    expect(parametrosParaClasse(noTeto, 2, "RN").prorrogacaoDias).toBe(90);
+    expect(parametrosParaClasse(noTeto, 2, "RN").prorrogacaoDias).toBe(180);
   });
 
-  it("rejeita prorrogação acima do teto legal do art. 21 (> 90 dias)", () => {
-    // valor juridicamente impossível — art. 21 admite "por até 90 dias".
+  it("rejeita prorrogação acima do teto legal do art. 21 (> 180 dias)", () => {
+    // valor juridicamente impossível — o somatório do art. 21, §3º (redação
+    // do Prov. 243) é de "até 180 dias".
     const acimaDoTeto = rows.map((r) =>
-      r.chave === "prorrogacao_art20_dias" ? { ...r, valor: "93" } : r,
+      r.chave === "prorrogacao_art20_dias" ? { ...r, valor: "181" } : r,
     );
     expect(() => parametrosParaClasse(acimaDoTeto, 2, "RN")).toThrow(
       /art\. 21/,
@@ -183,18 +186,62 @@ describe("parametrosParaClasse", () => {
   });
 });
 
-describe("classePorArrecadacao (tetos 100k / 500k)", () => {
+describe("classePorArrecadacao (tetos 300k / 1,5M — art. 16, red. Prov. 243)", () => {
   it("classifica nos limites exatos dos tetos", () => {
-    expect(classePorArrecadacao(100_000, 100_000, 500_000)).toBe(1);
-    expect(classePorArrecadacao(100_000.01, 100_000, 500_000)).toBe(2);
-    expect(classePorArrecadacao(500_000, 100_000, 500_000)).toBe(2);
-    expect(classePorArrecadacao(500_000.01, 100_000, 500_000)).toBe(3);
+    expect(classePorArrecadacao(300_000, 300_000, 1_500_000)).toBe(1);
+    expect(classePorArrecadacao(300_000.01, 300_000, 1_500_000)).toBe(2);
+    expect(classePorArrecadacao(1_500_000, 300_000, 1_500_000)).toBe(2);
+    expect(classePorArrecadacao(1_500_000.01, 300_000, 1_500_000)).toBe(3);
   });
 
   it("valores típicos", () => {
-    expect(classePorArrecadacao(0, 100_000, 500_000)).toBe(1);
-    expect(classePorArrecadacao(376_172.77, 100_000, 500_000)).toBe(2);
-    expect(classePorArrecadacao(9_000_000, 100_000, 500_000)).toBe(3);
+    expect(classePorArrecadacao(0, 300_000, 1_500_000)).toBe(1);
+    expect(classePorArrecadacao(376_172.77, 300_000, 1_500_000)).toBe(2);
+    expect(classePorArrecadacao(9_000_000, 300_000, 1_500_000)).toBe(3);
+  });
+});
+
+describe("subclassePorReceita (art. 16, A a J)", () => {
+  const sub = (base: number) => subclassePorReceita(base, 300_000, 1_500_000);
+
+  it("Classe 1 em terços do teto (A/B/C)", () => {
+    expect(sub(0)).toBe("A");
+    expect(sub(100_000)).toBe("A");
+    expect(sub(100_000.01)).toBe("B");
+    expect(sub(200_000)).toBe("B");
+    expect(sub(200_000.01)).toBe("C");
+    expect(sub(300_000)).toBe("C");
+  });
+
+  it("Classe 2 em terços do teto da classe (D/E/F)", () => {
+    expect(sub(300_000.01)).toBe("D");
+    expect(sub(500_000)).toBe("D");
+    expect(sub(1_000_000)).toBe("E");
+    expect(sub(1_500_000)).toBe("F");
+  });
+
+  it("Classe 3 em múltiplos do teto da Classe 2 (G/H/I/J)", () => {
+    expect(sub(1_500_000.01)).toBe("G");
+    expect(sub(4_500_000)).toBe("G");
+    expect(sub(4_500_000.01)).toBe("H");
+    expect(sub(9_000_000)).toBe("H");
+    expect(sub(18_000_000)).toBe("I");
+    expect(sub(18_000_000.01)).toBe("J");
+  });
+});
+
+describe("dispensadoParaClasse (ex.: DPO na Classe 1 — Prov. 214)", () => {
+  const condicoes = { dispensaClasses: [1], dispensaNota: "dispensado" };
+
+  it("dispensa apenas as classes listadas", () => {
+    expect(dispensadoParaClasse(condicoes, 1)).toBe(true);
+    expect(dispensadoParaClasse(condicoes, 2)).toBe(false);
+    expect(dispensadoParaClasse(condicoes, 3)).toBe(false);
+  });
+
+  it("sem condições ou sem dispensa, nunca dispensa", () => {
+    expect(dispensadoParaClasse(null, 1)).toBe(false);
+    expect(dispensadoParaClasse({ nota: "x" }, 1)).toBe(false);
   });
 });
 
@@ -208,23 +255,23 @@ describe("baseArrecadacao (fallback do semestre zerado)", () => {
   });
 
   it("um semestre atual zerado que classificaria como C1 usa o anterior (C2)", () => {
-    // atual=0 → base=200k → C2, não C1
+    // atual=0 → base=400k → C2, não C1
     expect(
-      classePorArrecadacao(baseArrecadacao(0, 200_000), 100_000, 500_000),
+      classePorArrecadacao(baseArrecadacao(0, 400_000), 300_000, 1_500_000),
     ).toBe(2);
   });
 });
 
 describe("tetosDaNorma", () => {
   const rows = [
-    { chave: "teto_classe_1", valor: "100000", uf: null, descricao: null },
-    { chave: "teto_classe_2", valor: "500000", uf: null, descricao: null },
+    { chave: "teto_classe_1", valor: "300000", uf: null, descricao: null },
+    { chave: "teto_classe_2", valor: "1500000", uf: null, descricao: null },
   ];
 
   it("lê os tetos nacionais de parametro_norma", () => {
     expect(tetosDaNorma(rows)).toEqual({
-      tetoClasse1: 100_000,
-      tetoClasse2: 500_000,
+      tetoClasse1: 300_000,
+      tetoClasse2: 1_500_000,
     });
   });
 

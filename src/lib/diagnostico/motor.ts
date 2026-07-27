@@ -2,7 +2,11 @@
 // protótipo validado (docs/diagnostico-provimento-213.html, listener de submit).
 // Requisitos e prazos chegam como dados (tabelas requisito/parametro_norma).
 
-import type { DiagnosticoEscopo, RespostaValor } from "@/db/schema";
+import type {
+  DiagnosticoEscopo,
+  RequisitoCondicoes,
+  RespostaValor,
+} from "@/db/schema";
 
 export const VALOR_PONTOS: Record<RespostaValor, number> = {
   sim: 1,
@@ -22,6 +26,17 @@ export function statusPorScore(score: number): StatusEtapa {
 
 export function etapasDoEscopo(escopo: DiagnosticoEscopo): number[] {
   return escopo === "inicial" ? [1, 2] : [1, 2, 3, 4, 5];
+}
+
+/**
+ * Requisito dispensado para a classe (ex.: DPO na Classe 1 — Prov. 214,
+ * art. 88, §4º): continua na entrevista, mas sai do score e dos gaps.
+ */
+export function dispensadoParaClasse(
+  condicoes: RequisitoCondicoes | null | undefined,
+  classe: number,
+): boolean {
+  return condicoes?.dispensaClasses?.includes(classe) ?? false;
 }
 
 export interface RequisitoPontuavel {
@@ -73,8 +88,11 @@ export function ordenarGaps<T extends RequisitoPontuavel & { ordem: number }>(
 
 /* ---- Prazos (art. 20 e art. 23) ----------------------------------------- */
 
-/** Teto legal da prorrogação estadual do art. 21: "por até 90 (noventa) dias". */
-export const PRORROGACAO_MAX_DIAS = 90;
+/**
+ * Teto legal da prorrogação estadual do art. 21, §3º (redação do Prov. 243):
+ * o somatório das prorrogações "não poderá ultrapassar 180 (cento e oitenta) dias".
+ */
+export const PRORROGACAO_MAX_DIAS = 180;
 
 export interface ParametrosPrazo {
   vigencia: Date;
@@ -160,8 +178,8 @@ export function parametrosParaClasse(
     rows.find((r) => r.chave === chave && r.uf === uf.toUpperCase());
   const prorrogacao = daUf("prorrogacao_art20_dias");
   const prorrogacaoDias = prorrogacao ? Number(prorrogacao.valor) : 0;
-  // Teto legal do art. 21 ("por até 90 dias"): um valor acima é juridicamente
-  // impossível — falha alto em vez de publicar uma afirmação falsa.
+  // Teto legal do art. 21, §3º (somatório de até 180 dias): um valor acima é
+  // juridicamente impossível — falha alto em vez de publicar uma afirmação falsa.
   if (prorrogacaoDias > PRORROGACAO_MAX_DIAS) {
     throw new Error(
       `Prorrogação estadual (${uf}) de ${prorrogacaoDias} dias excede o limite legal do art. 21 (${PRORROGACAO_MAX_DIAS} dias).`,
@@ -186,7 +204,7 @@ export function parametrosParaClasse(
   };
 }
 
-/* ---- Classe por arrecadação (art. 16) ----------------------------------- */
+/* ---- Classe por receita bruta semestral (art. 16, red. Prov. 243) -------- */
 
 /** Base de enquadramento: se o último semestre veio zerado, usa o anterior. */
 export function baseArrecadacao(atual: number, anterior: number): number {
@@ -194,9 +212,10 @@ export function baseArrecadacao(atual: number, anterior: number): number {
 }
 
 /**
- * Classe estimada pela arrecadação (tetos vindos de parametro_norma). É uma
- * ESTIMATIVA para priorização comercial — o enquadramento oficial é o
- * declarado pela própria serventia (art. 16 §1º).
+ * Classe estimada (tetos vindos de parametro_norma). O enquadramento legal é
+ * pela RECEITA BRUTA SEMESTRAL (art. 2º, XXIV, red. Prov. 243); a arrecadação
+ * declarada entra como proxy. É uma ESTIMATIVA para priorização comercial — o
+ * enquadramento oficial é o declarado pela própria serventia (art. 16 §1º).
  */
 export function classePorArrecadacao(
   base: number,
@@ -206,6 +225,29 @@ export function classePorArrecadacao(
   if (base <= tetoClasse1) return 1;
   if (base <= tetoClasse2) return 2;
   return 3;
+}
+
+/**
+ * Subclasse estimada do art. 16 (red. Prov. 243): Classes 1 e 2 em terços do
+ * teto da própria classe (A-C e D-F); Classe 3 em múltiplos do teto da
+ * Classe 2 (G até 3x, H até 6x, I até 12x, J acima).
+ */
+export function subclassePorReceita(
+  base: number,
+  tetoClasse1: number,
+  tetoClasse2: number,
+): string {
+  if (base <= tetoClasse1) {
+    if (base <= tetoClasse1 / 3) return "A";
+    return base <= (2 * tetoClasse1) / 3 ? "B" : "C";
+  }
+  if (base <= tetoClasse2) {
+    if (base <= tetoClasse2 / 3) return "D";
+    return base <= (2 * tetoClasse2) / 3 ? "E" : "F";
+  }
+  if (base <= 3 * tetoClasse2) return "G";
+  if (base <= 6 * tetoClasse2) return "H";
+  return base <= 12 * tetoClasse2 ? "I" : "J";
 }
 
 export interface TetosNorma {

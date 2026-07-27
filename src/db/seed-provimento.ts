@@ -7,13 +7,18 @@
 // Idempotente: upsert por id determinístico — NÃO apaga requisitos nem
 // respostas existentes; atualiza textos/pesos/classes in place.
 //
-// ATENÇÃO: o upsert sobrescreve `revisado` com false. Enquanto a revisão
-// editorial dos textos for feita direto no banco, preserve a coluna antes de
-// rodar o seed em produção (ou mova a revisão para este arquivo).
+// A revisão editorial vive no CÓDIGO: `revisado` vem de provimento-data.ts
+// (hoje true para todos) e o upsert sobrescreve o que estiver no banco — não
+// marque revisão direto no banco, marque lá.
 
+import { inArray } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/node-postgres";
 import { Pool } from "pg";
-import { montarRequisitosSeed, PARAMETROS } from "./provimento-data.ts";
+import {
+  montarRequisitosSeed,
+  PARAMETROS,
+  PARAMETROS_OBSOLETOS,
+} from "./provimento-data.ts";
 import * as schema from "./schema.ts";
 
 const db = drizzle(new Pool({ connectionString: process.env.DATABASE_URL }), {
@@ -43,8 +48,14 @@ async function main() {
       .onConflictDoUpdate({ target: schema.parametroNorma.id, set: values });
   }
 
+  // Parâmetros que a norma superou (ex.: prorrogação CGJ-RN pré-Prov. 243):
+  // o upsert não remove linha nenhuma, então a limpeza é explícita.
+  await db
+    .delete(schema.parametroNorma)
+    .where(inArray(schema.parametroNorma.id, PARAMETROS_OBSOLETOS));
+
   console.log(
-    `Seed provimento: ${requisitos.length} requisitos, ${PARAMETROS.length} parâmetros.`,
+    `Seed provimento: ${requisitos.length} requisitos, ${PARAMETROS.length} parâmetros (${PARAMETROS_OBSOLETOS.length} obsoletos removidos).`,
   );
   process.exit(0);
 }

@@ -24,8 +24,9 @@ export function ContadorPrazos({
           Prazo das Etapas 1 e 2 no RN
         </span>
         <span className="text-xs leading-[1.45] text-fg-5">
-          Já com a prorrogação de {norma.prorrogacaoDias} dias concedida pela
-          Corregedoria (CGJ-RN)
+          {norma.prorrogacaoDias > 0
+            ? `Já com a prorrogação de ${norma.prorrogacaoDias} dias concedida pela Corregedoria (CGJ-RN)`
+            : `Prazos do art. 20, contados da vigência do Provimento 243/2026 (${norma.vigencia})`}
         </span>
       </div>
       <div className="grid grid-cols-3 gap-3">

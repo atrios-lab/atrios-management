@@ -16,6 +16,8 @@ interface RequisitoView {
   perguntaTecnica: string;
   perguntaSimples: string;
   peso: number;
+  /** nota de dispensa para a classe (ex.: DPO na Classe 1) — não pontua */
+  dispensa: string | null;
 }
 
 interface EtapaView {
@@ -184,6 +186,12 @@ export function EntrevistaForm({
                   <p className="border-l-2 border-line pl-2.5 text-[12px] italic leading-snug text-fg-7">
                     Como perguntar: “{r.perguntaSimples}”
                   </p>
+                  {r.dispensa && (
+                    <p className="rounded-field border border-[rgba(76,183,130,0.3)] bg-[rgba(76,183,130,0.08)] px-2.5 py-1.5 text-[11.5px] leading-snug text-[#7cc9a2]">
+                      <b>Dispensado</b> · {r.dispensa} A resposta é opcional e
+                      não pontua.
+                    </p>
+                  )}
                   <Opcoes
                     name={r.perguntaTecnica}
                     valor={respostas[r.id]}

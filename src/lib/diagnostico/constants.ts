@@ -107,10 +107,13 @@ export const MODELO_LABEL: Record<DiagnosticoModelo, string> = {
   nao_sei: "Não sei informar",
 };
 
+// Faixas de receita bruta semestral do art. 16 (redação do Prov. 243).
+// ponytail: espelha teto_classe_1/2 do seed (provimento-data.ts) — mudou lá,
+// muda aqui; derivar do banco exigiria passar tetos ao form client-side.
 export const CLASSE_LABEL: Record<number, string> = {
-  1: "Classe 1 — até R$ 100 mil/semestre",
-  2: "Classe 2 — entre R$ 100 mil e R$ 500 mil/semestre",
-  3: "Classe 3 — acima de R$ 500 mil/semestre",
+  1: "Classe 1 — receita bruta até R$ 300 mil/semestre",
+  2: "Classe 2 — entre R$ 300 mil e R$ 1,5 milhão/semestre",
+  3: "Classe 3 — acima de R$ 1,5 milhão/semestre",
 };
 
 /** Subclasses do art. 16 por classe (opcional no cadastro). */

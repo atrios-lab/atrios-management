@@ -40,8 +40,9 @@ export default async function NovoDiagnosticoPage({
             <p className="mb-4 rounded-field border border-[rgba(94,106,210,0.3)] bg-[rgba(94,106,210,0.08)] px-3 py-2 text-[12px] text-primary-ink">
               Pré-preenchido a partir da serventia{" "}
               <strong className="font-semibold">{serventia.nome}</strong>{" "}
-              (classe {serventia.classe} estimada). Confira a arrecadação antes
-              de concluir.
+              (classe {serventia.classe}
+              {serventia.subclasse} estimada pela arrecadação). Confira a
+              receita bruta semestral antes de concluir.
             </p>
           )}
           <NovoDiagnosticoForm
@@ -53,6 +54,7 @@ export default async function NovoDiagnosticoPage({
                     municipio: serventia.cidade,
                     uf: serventia.uf,
                     classe: serventia.classe,
+                    subclasse: serventia.subclasse,
                     contatoNome: serventia.responsavel ?? "",
                     contatoEmail: serventia.email ?? "",
                     contatoWhatsapp: serventia.telefone ?? "",
