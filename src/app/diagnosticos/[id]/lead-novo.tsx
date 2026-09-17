@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { ArrowLeftIcon } from "@/components/icons";
 import { formatRelative } from "@/lib/product-constants";
+import { LinkAutoavaliacao } from "./link-autoavaliacao";
 import type { DiagnosticoRow } from "./queries";
 
 // Visão de lead recém-chegado do pré-cadastro público (status "novo"). Ainda não
@@ -18,7 +19,13 @@ function Linha({ rotulo, valor }: { rotulo: string; valor: string | null }) {
   );
 }
 
-export function LeadNovoView({ diag }: { diag: DiagnosticoRow }) {
+export function LeadNovoView({
+  diag,
+  siteUrl,
+}: {
+  diag: DiagnosticoRow;
+  siteUrl: string;
+}) {
   return (
     <>
       <header className="flex h-[53px] shrink-0 items-center gap-[9px] border-b border-line px-5">
@@ -95,8 +102,22 @@ export function LeadNovoView({ diag }: { diag: DiagnosticoRow }) {
             <p className="text-[12.5px] leading-relaxed text-fg-7">
               Para iniciar a entrevista, complete a classe (receita bruta
               semestral) e demais dados da serventia — o roteiro do provimento
-              depende da classe.
+              depende da classe. Ou envie o link abaixo: a própria serventia
+              informa a faixa de receita e responde, e o lead passa a “Em
+              andamento”.
             </p>
+          </div>
+
+          <div className="mt-4">
+            <LinkAutoavaliacao
+              diagnosticoId={diag.id}
+              serventia={diag.serventia}
+              contatoWhatsapp={diag.contatoWhatsapp}
+              link={diag.autoavaliacao}
+              siteUrl={siteUrl}
+              respondidas={0}
+              total={0}
+            />
           </div>
         </div>
       </div>

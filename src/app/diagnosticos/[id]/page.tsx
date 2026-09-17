@@ -7,6 +7,7 @@ import {
   IDENTIDADE_QUESTOES,
 } from "@/lib/diagnostico/constants";
 import { dispensadoParaClasse, etapasDoEscopo } from "@/lib/diagnostico/motor";
+import { siteUrl } from "@/lib/landing/config";
 import { EntrevistaForm } from "./entrevista-form";
 import { LeadNovoView } from "./lead-novo";
 import {
@@ -26,7 +27,8 @@ export default async function DiagnosticoPage({
   if (!diag) notFound();
 
   // Lead do pré-cadastro público: sem classe ainda, então não há relatório.
-  if (diag.statusFunil === "novo") return <LeadNovoView diag={diag} />;
+  if (diag.statusFunil === "novo")
+    return <LeadNovoView diag={diag} siteUrl={siteUrl()} />;
 
   if (diag.statusFunil !== "em_andamento") {
     const relatorio = await getRelatorio(diag);
@@ -35,6 +37,18 @@ export default async function DiagnosticoPage({
 
   const etapas = etapasDoEscopo(diag.escopo);
   const requisitos = await getRequisitosAplicaveis(diag.classe, etapas);
+
+  // Progresso da autoavaliação pública: só requisitos não dispensados (a
+  // serventia não vê os dispensados) + identidade digital.
+  const pontuaveis = requisitos.filter(
+    (r) =>
+      diag.classe == null || !dispensadoParaClasse(r.condicoes, diag.classe),
+  );
+  const respondidosIds = new Set(diag.respostas.map((r) => r.requisitoId));
+  const respondidas =
+    pontuaveis.filter((r) => respondidosIds.has(r.id)).length +
+    diag.respostasIdentidade.length;
+  const total = pontuaveis.length + IDENTIDADE_QUESTOES.length;
 
   return (
     <>
@@ -54,9 +68,25 @@ export default async function DiagnosticoPage({
           Classe {diag.classe}
           {diag.subclasse ?? ""} · {diag.uf}
         </span>
+        {diag.enquadramentoDeclaradoEm && (
+          <span
+            className="shrink-0 rounded-chip bg-[rgba(94,106,210,0.14)] px-2 py-0.5 text-[10.5px] font-medium text-primary-ink"
+            title="Classe e modelo de solução informados pela própria serventia no formulário de autoavaliação (art. 16, §1º)."
+          >
+            Classe declarada pela serventia
+          </span>
+        )}
       </header>
       <EntrevistaForm
         diagnosticoId={diag.id}
+        autoavaliacao={{
+          serventia: diag.serventia,
+          contatoWhatsapp: diag.contatoWhatsapp,
+          link: diag.autoavaliacao,
+          siteUrl: siteUrl(),
+          respondidas,
+          total,
+        }}
         etapas={etapas.map((e) => ({
           numero: e,
           titulo: ETAPAS[e],

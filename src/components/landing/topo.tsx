@@ -9,8 +9,10 @@ import { LogoAtriosLockup } from "./logo-atrios-lockup";
 function LogoAtrios() {
   // O lockup traz a cor por currentColor, então dispensa o PNG escuro com
   // filter:invert(1) que existia aqui, e não perde nitidez ao escalar.
+  // fg-hi (não `text-white`): igual a branco no tema escuro e vira quase
+  // preto dentro de [data-theme="light"] (rota /autoavaliacao).
   return (
-    <LogoAtriosLockup className="h-[30px] w-auto text-white md:h-[34px]" />
+    <LogoAtriosLockup className="h-[30px] w-auto text-fg-hi md:h-[34px]" />
   );
 }
 
