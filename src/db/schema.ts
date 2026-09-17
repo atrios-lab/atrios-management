@@ -655,6 +655,11 @@ export const diagnostico = pgTable(
     // formulário público.
     consentimentoEm: timestamp("consentimento_em"),
     consentimentoPolitica: text("consentimento_politica"),
+    // Classe/modelo declarados pela própria serventia no formulário público de
+    // autoavaliação (art. 16, §1º: o enquadramento oficial é o declarado pela
+    // serventia, então a declaração prevalece sobre a estimativa da equipe).
+    // Nulo = definidos pela equipe.
+    enquadramentoDeclaradoEm: timestamp("enquadramento_declarado_em"),
     origem: text("origem")
       .$type<DiagnosticoOrigem>()
       .notNull()
@@ -744,6 +749,10 @@ export const diagnosticoRelations = relations(diagnostico, ({ one, many }) => ({
   }),
   respostas: many(resposta),
   respostasIdentidade: many(respostaIdentidade),
+  autoavaliacao: one(autoavaliacao, {
+    fields: [diagnostico.id],
+    references: [autoavaliacao.diagnosticoId],
+  }),
 }));
 
 export const serventiaRelations = relations(serventia, ({ many }) => ({
@@ -773,6 +782,63 @@ export const respostaIdentidadeRelations = relations(
 
 export const requisitoRelations = relations(requisito, ({ many }) => ({
   respostas: many(resposta),
+}));
+
+/* ---- Autoavaliação pública (link enviado à serventia) ------------------- */
+
+// Uma linha por diagnóstico: o link `/autoavaliacao/<token>` que a equipe gera
+// e envia à serventia para ela mesma responder o roteiro, em linguagem simples.
+// O token é o que identifica QUAL cartório respondeu — a equipe o amarra ao
+// diagnóstico ao gerar; nunca é autodeclaração do visitante. Regenerar troca o
+// token/validade na mesma linha (mantém respondente e progresso); revogar só
+// marca `revogado_em`. Estado do link é DERIVADO (lib/diagnostico/autoavaliacao).
+export const autoavaliacao = pgTable(
+  "autoavaliacao",
+  {
+    id: text("id")
+      .primaryKey()
+      .$defaultFn(() => crypto.randomUUID()),
+    diagnosticoId: text("diagnostico_id")
+      .notNull()
+      .references(() => diagnostico.id, { onDelete: "cascade" }),
+    // segredo de 32 bytes em base64url — 256 bits, não se enumera
+    token: text("token").notNull(),
+    expiraEm: timestamp("expira_em").notNull(),
+    revogadoEm: timestamp("revogado_em"),
+    criadoPorId: text("criado_por_id").references(() => user.id, {
+      onDelete: "set null",
+    }),
+    createdAt: timestamp("created_at").defaultNow().notNull(),
+    // preenchidos pela serventia ao se identificar
+    respondenteNome: text("respondente_nome"),
+    respondenteCargo: text("respondente_cargo"),
+    respondenteEmail: text("respondente_email"),
+    respondenteWhatsapp: text("respondente_whatsapp"),
+    // Prova do consentimento (LGPD art. 8º, §1º), como no pré-cadastro.
+    consentimentoEm: timestamp("consentimento_em"),
+    consentimentoPolitica: text("consentimento_politica"),
+    // IP truncado (LGPD) — nunca o IP completo.
+    ip: text("ip"),
+    // 1ª gravação da serventia (identificação)
+    iniciadoEm: timestamp("iniciado_em"),
+    // envio final: a partir daqui o formulário público é somente leitura
+    enviadoEm: timestamp("enviado_em"),
+  },
+  (table) => [
+    uniqueIndex("autoavaliacao_diagnosticoId_uq").on(table.diagnosticoId),
+    uniqueIndex("autoavaliacao_token_uq").on(table.token),
+  ],
+);
+
+export const autoavaliacaoRelations = relations(autoavaliacao, ({ one }) => ({
+  diagnostico: one(diagnostico, {
+    fields: [autoavaliacao.diagnosticoId],
+    references: [diagnostico.id],
+  }),
+  criadoPor: one(user, {
+    fields: [autoavaliacao.criadoPorId],
+    references: [user.id],
+  }),
 }));
 
 /* ---- Log de geração dos relatórios (PDF) --------------------------------- */

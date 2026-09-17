@@ -100,6 +100,63 @@
   --animate-sheet-up: sheet-up 0.28s var(--ease-atr);
 }
 
+/* ============================================================
+   TEMA CLARO — escopado por [data-theme="light"]
+   As utilities do Tailwind v4 resolvem para var(--color-*), então
+   redefinir as variáveis num ancestral pinta a subárvore inteira sem
+   tocar em classe nenhuma. Hoje só a rota pública /autoavaliacao usa
+   (a serventia responde no celular, sob luz do dia). O seletor duplo
+   cobre o <main> e o <body> que o contém (fundo do documento, overscroll
+   no iOS, scrollbar) — sem precisar de atributo no <html>.
+   Contraste: fg-hi..fg-6 ≥ 4.5:1 sobre branco; fg-7..fg-9 ≥ 3:1.
+   ============================================================ */
+[data-theme="light"],
+body:has([data-theme="light"]) {
+  color-scheme: light;
+
+  --color-canvas-top: #ffffff;
+  --color-canvas-mid: #f5f6fa;
+  --color-canvas-base: #eef0f5;
+  --color-surface-0: #f7f8fb;
+  --color-surface-1: #f3f4f8;
+  --color-surface-2: #f0f1f6;
+  --color-surface-3: #edeef4;
+  --color-surface-4: #eaebf2;
+  --color-surface-card: #ffffff;
+  --color-surface-card-hover: #fafbfd;
+  --color-surface-raised: #f3f4f8;
+  --color-surface-selected: #eef0f7;
+
+  --color-line-subtle: rgba(15, 17, 26, 0.06);
+  --color-line: rgba(15, 17, 26, 0.09);
+  --color-line-strong: rgba(15, 17, 26, 0.12);
+  --color-line-field: rgba(15, 17, 26, 0.16);
+  --color-line-field-strong: rgba(15, 17, 26, 0.2);
+  --color-line-hover: rgba(15, 17, 26, 0.32);
+
+  --color-fg-hi: #0f1117;
+  --color-fg-1: #171923;
+  --color-fg-2: #23262f;
+  --color-fg-3: #343846;
+  --color-fg-4: #4a4f5e;
+  --color-fg-5: #5b6071;
+  --color-fg-6: #646979;
+  --color-fg-7: #737887;
+  --color-fg-8: #7f8492;
+  --color-fg-9: #868b99;
+
+  /* primary/primary-hover ficam (branco sobre #5e6ad2 ≈ 4.9:1) */
+  --color-primary-fg: #4650b8;
+  --color-primary-fg-hi: #3a43a6;
+  --color-primary-ink: #4a55c4;
+
+  --color-success: #2f8f5f;
+  --color-warning: #a8720c;
+  --color-info: #2f6fd6;
+  --color-danger: #c24545;
+  --color-status-done: #2f8f5f;
+}
+
 /* ---- Shared keyframes ---- */
 @keyframes autopulse {
   0%,

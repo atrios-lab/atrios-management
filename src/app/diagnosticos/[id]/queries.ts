@@ -28,6 +28,9 @@ export async function getDiagnostico(id: string) {
       respostas: { columns: { requisitoId: true, valor: true } },
       respostasIdentidade: { columns: { item: true, valor: true } },
       criadoPor: { columns: { name: true } },
+      // link público de autoavaliação (estado derivado em lib/diagnostico/
+      // autoavaliacao) — o token vai só para a UI interna autenticada
+      autoavaliacao: true,
     },
   });
 }

@@ -66,7 +66,10 @@ export default async function DiagnosticosPage({
     db.query.diagnostico.findMany({
       where,
       orderBy: desc(schema.diagnostico.updatedAt),
-      with: { criadoPor: { columns: { name: true } } },
+      with: {
+        criadoPor: { columns: { name: true } },
+        autoavaliacao: { columns: { enviadoEm: true } },
+      },
     }),
     db
       .select({ leadsPendentes: count() })
@@ -186,6 +189,16 @@ export default async function DiagnosticosPage({
                           <span className="inline-flex items-center gap-1.5 text-[12px] text-fg-6">
                             <span className="size-1.5 rounded-full bg-[#8a8f98]" />
                             {STATUS_FUNIL_LABEL.em_andamento}
+                            {/* a serventia já enviou a autoavaliação: tem
+                                resposta para revisar e concluir */}
+                            {d.autoavaliacao?.enviadoEm && (
+                              <span
+                                className="rounded-chip border border-[rgba(76,183,130,0.3)] bg-[rgba(76,183,130,0.10)] px-1.5 py-px text-[10px] font-medium text-[#7cc9a2]"
+                                title="Autoavaliação enviada pela serventia — revisar e concluir"
+                              >
+                                Autoavaliação recebida
+                              </span>
+                            )}
                           </span>
                         ) : (
                           <FunilSelect

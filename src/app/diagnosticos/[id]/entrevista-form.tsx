@@ -8,6 +8,10 @@ import { cn } from "@/lib/cn";
 import type { IdentidadeQuestao } from "@/lib/diagnostico/constants";
 import { VALORES } from "@/lib/diagnostico/constants";
 import { concluirDiagnostico, salvarRespostas } from "../actions";
+import {
+  LinkAutoavaliacao,
+  type LinkAutoavaliacaoRow,
+} from "./link-autoavaliacao";
 
 interface RequisitoView {
   id: string;
@@ -62,8 +66,18 @@ function Opcoes({
   );
 }
 
+export interface AutoavaliacaoView {
+  serventia: string;
+  contatoWhatsapp: string | null;
+  link: LinkAutoavaliacaoRow | null;
+  siteUrl: string;
+  respondidas: number;
+  total: number;
+}
+
 export function EntrevistaForm({
   diagnosticoId,
+  autoavaliacao,
   etapas,
   requisitos,
   identidade,
@@ -71,6 +85,7 @@ export function EntrevistaForm({
   identidadeIniciais,
 }: {
   diagnosticoId: string;
+  autoavaliacao: AutoavaliacaoView;
   etapas: EtapaView[];
   requisitos: RequisitoView[];
   identidade: IdentidadeQuestao[];
@@ -139,6 +154,33 @@ export function EntrevistaForm({
             para você; o texto “como perguntar” é a versão em linguagem simples.
             Se o entrevistado não souber responder, marque “Não sei”.
           </p>
+
+          <LinkAutoavaliacao
+            diagnosticoId={diagnosticoId}
+            serventia={autoavaliacao.serventia}
+            contatoWhatsapp={autoavaliacao.contatoWhatsapp}
+            link={autoavaliacao.link}
+            siteUrl={autoavaliacao.siteUrl}
+            respondidas={autoavaliacao.respondidas}
+            total={autoavaliacao.total}
+          />
+
+          {autoavaliacao.link?.enviadoEm && (
+            <div className="rounded-field border border-[rgba(76,183,130,0.3)] bg-[rgba(76,183,130,0.08)] px-3.5 py-2.5 text-[12.5px] leading-snug text-[#7cc9a2]">
+              <b>Autoavaliação recebida</b> por{" "}
+              {autoavaliacao.link.respondenteNome ?? "a serventia"}
+              {autoavaliacao.link.respondenteCargo
+                ? ` (${autoavaliacao.link.respondenteCargo})`
+                : ""}{" "}
+              em{" "}
+              {autoavaliacao.link.enviadoEm.toLocaleString("pt-BR", {
+                dateStyle: "short",
+                timeStyle: "short",
+              })}
+              . As respostas abaixo são as que a serventia marcou — revise,
+              ajuste se preciso e conclua.
+            </div>
+          )}
 
           {/* Identidade digital */}
           <section className="rounded-panel border border-line bg-surface-card p-[18px]">

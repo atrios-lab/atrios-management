@@ -13,6 +13,7 @@ import type {
 } from "@/db/schema";
 import * as schema from "@/db/schema";
 import { auth } from "@/lib/auth";
+import { expiracaoPadrao, gerarToken } from "@/lib/diagnostico/autoavaliacao";
 import {
   IDENTIDADE_QUESTOES,
   SUBCLASSES,
@@ -23,6 +24,7 @@ import {
   dispensadoParaClasse,
   etapasDoEscopo,
 } from "@/lib/diagnostico/motor";
+import { upsertRespostas } from "@/lib/diagnostico/respostas";
 import { publish } from "@/lib/realtime/publish";
 import { channels } from "@/lib/realtime/types";
 
@@ -144,34 +146,9 @@ export async function salvarRespostas(
     (r) => VALORES.includes(r.valor) && ITENS_IDENTIDADE.includes(r.item),
   );
 
-  await db.transaction(async (tx) => {
-    for (const r of respostasOk) {
-      await tx
-        .insert(schema.resposta)
-        .values({ diagnosticoId, requisitoId: r.requisitoId, valor: r.valor })
-        .onConflictDoUpdate({
-          target: [schema.resposta.diagnosticoId, schema.resposta.requisitoId],
-          set: { valor: r.valor, updatedAt: new Date() },
-        });
-    }
-    for (const r of identidadeOk) {
-      await tx
-        .insert(schema.respostaIdentidade)
-        .values({ diagnosticoId, item: r.item, valor: r.valor })
-        .onConflictDoUpdate({
-          target: [
-            schema.respostaIdentidade.diagnosticoId,
-            schema.respostaIdentidade.item,
-          ],
-          set: { valor: r.valor, updatedAt: new Date() },
-        });
-    }
-    // alimenta "há X" e a ordenação da listagem
-    await tx
-      .update(schema.diagnostico)
-      .set({ updatedAt: new Date() })
-      .where(eq(schema.diagnostico.id, diagnosticoId));
-  });
+  await db.transaction((tx) =>
+    upsertRespostas(tx, diagnosticoId, respostasOk, identidadeOk),
+  );
   revalidatePath(`/diagnosticos/${diagnosticoId}`);
   revalidatePath("/diagnosticos");
   await notifyDiagnosticos(session.user.id, diagnosticoId);
@@ -293,6 +270,61 @@ export async function setStatusFunil(
     .where(eq(schema.diagnostico.id, diagnosticoId));
   revalidatePath(`/diagnosticos/${diagnosticoId}`);
   revalidatePath("/diagnosticos");
+  await notifyDiagnosticos(session.user.id, diagnosticoId);
+  return {};
+}
+
+/* ---- Link de autoavaliação (a serventia responde sozinha) ---------------- */
+
+// Gera (ou regenera) o link público do diagnóstico. Regenerar troca só o
+// segredo e a validade — respondente e respostas já gravadas ficam. É a
+// equipe que amarra o link ao diagnóstico: é isso que identifica QUAL
+// cartório respondeu (ver lib/diagnostico/autoavaliacao).
+export async function gerarLinkAutoavaliacao(
+  diagnosticoId: string,
+): Promise<Result & { token?: string }> {
+  const session = await requireSession();
+  if (!session) return { error: "Sessão expirada." };
+  const diag = await db.query.diagnostico.findFirst({
+    where: eq(schema.diagnostico.id, diagnosticoId),
+    columns: { id: true, statusFunil: true },
+  });
+  if (!diag) return { error: "Diagnóstico não encontrado." };
+  if (diag.statusFunil !== "novo" && diag.statusFunil !== "em_andamento")
+    return { error: "Reabra o diagnóstico para gerar o link." };
+
+  const agora = new Date();
+  const token = gerarToken();
+  const values = {
+    token,
+    expiraEm: expiracaoPadrao(agora),
+    revogadoEm: null,
+    criadoPorId: session.user.id,
+  };
+  await db
+    .insert(schema.autoavaliacao)
+    .values({ diagnosticoId, ...values })
+    .onConflictDoUpdate({
+      target: schema.autoavaliacao.diagnosticoId,
+      set: values,
+    });
+  revalidatePath(`/diagnosticos/${diagnosticoId}`);
+  await notifyDiagnosticos(session.user.id, diagnosticoId);
+  return { token };
+}
+
+export async function revogarLinkAutoavaliacao(
+  diagnosticoId: string,
+): Promise<Result> {
+  const session = await requireSession();
+  if (!session) return { error: "Sessão expirada." };
+  const [updated] = await db
+    .update(schema.autoavaliacao)
+    .set({ revogadoEm: new Date() })
+    .where(eq(schema.autoavaliacao.diagnosticoId, diagnosticoId))
+    .returning({ id: schema.autoavaliacao.id });
+  if (!updated) return { error: "Este diagnóstico não tem link gerado." };
+  revalidatePath(`/diagnosticos/${diagnosticoId}`);
   await notifyDiagnosticos(session.user.id, diagnosticoId);
   return {};
 }
